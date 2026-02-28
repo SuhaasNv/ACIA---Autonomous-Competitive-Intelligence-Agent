@@ -1,140 +1,113 @@
 <div align="center">
 
-# 🎯 Signal — ACIA
+# Signal — ACIA
 
-### *Autonomous Competitive Intelligence for SaaS Teams*
-
-**Detect strategic pricing and feature shifts before your competitors do.**
+### Autonomous Competitive Intelligence for SaaS Teams
 
 <br />
 
-[![Built by Suhaas](https://img.shields.io/badge/Built%20by-Suhaas-6366f1?style=for-the-badge&labelColor=1e1b4b)](https://github.com/SuhaasNv)
-[![React](https://img.shields.io/badge/React-18-61dafb?style=for-the-badge&logo=react)](https://react.dev/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178c6?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
-[![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ecf8e?style=for-the-badge&logo=supabase)](https://supabase.com/)
-[![Gemini AI](https://img.shields.io/badge/Gemini-2.5_Flash-4285F4?style=for-the-badge&logo=google)](https://ai.google.dev/)
+[![React](https://img.shields.io/badge/React-18-61dafb?style=flat-square&logo=react)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178c6?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
+[![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ecf8e?style=flat-square&logo=supabase)](https://supabase.com/)
+[![Gemini AI](https://img.shields.io/badge/Gemini-2.5_Flash-4285F4?style=flat-square&logo=google)](https://ai.google.dev/)
+[![Bright Data](https://img.shields.io/badge/Bright_Data-Scraping-ff6b35?style=flat-square)](https://brightdata.com/)
 
-<br />
-
-**A full-stack competitive intelligence platform — built from scratch by one developer.**
-
-[Demo](#-see-it-in-action) • [Quick Start](#-quick-start) • [Architecture](#-how-it-works) • [Integrations](#-integrations--use-cases) • [Tech Stack](#-tech-stack)
+[Overview](#overview) · [Screenshots](#screenshots) · [Getting Started](#getting-started) · [Architecture](#architecture) · [Integrations](#integrations) · [API](#api-reference)
 
 </div>
 
 ---
 
-## 🚀 What is Signal?
+## Overview
 
-**Signal** (ACIA) is a user-triggered competitive intelligence platform that monitors competitor pricing pages and delivers **AI-powered strategic insights** — only when it matters.
+Signal monitors competitor pricing pages and delivers AI-powered strategic insights whenever a meaningful change is detected. Add a competitor URL, run a scan, and get a structured report — no manual research required.
 
-> Add a competitor URL → Click Scan → Get actionable intelligence.  
-> **No background polling. No wasted API calls. Just smart, cost-efficient monitoring.**
+The platform is built around a cost-first design: HTML is scraped, parsed into structured JSON, and compared against a stored baseline. Gemini is only invoked when the delta crosses a 5% significance threshold. Unchanged scans return instantly at near-zero cost.
 
-Built for **SaaS founders** and **product managers** who need to stay ahead of competitive moves without manual research or expensive tools.
-
----
-
-## ✨ Why Judges Will Love This
-
-| What makes it stand out | The technical story |
-|-------------------------|---------------------|
-| **Cost-first AI design** | Gemini is called *only* when delta ≥5% — raw HTML never hits the LLM |
-| **Delta engine** | Custom diff engine compares structured JSON snapshots (Acontext baseline) before waking up AI |
-| **Full-stack solo build** | React + Express + Supabase + Bright Data + ActionBook + Acontext + Gemini — one developer, end-to-end |
-| **Production-ready auth** | Supabase Auth, JWT middleware, protected routes, onboarding flow |
-| **Smart scraping** | Bright Data (MCP → Proxy → Direct) with ActionBook agent fallback for dynamic/anti-bot pages |
+**Who it's for:** SaaS founders and product managers tracking competitor pricing strategy.
 
 ---
 
-## 🎬 See It In Action
+## Screenshots
 
-> The full journey from landing page to AI-powered strategic report — end to end.
+### Landing
 
----
-
-### 1. Landing Page
-
-<img src="images/landing.png" alt="Signal Landing Page — Autonomous Competitive Intelligence for SaaS Teams" width="100%" />
-
-*"Autonomous Competitive Intelligence for SaaS Teams." — clean, focused, production-ready.*
+<img src="images/landing.png" alt="Signal landing page" width="100%" />
 
 ---
 
-### 2. Secure Authentication
+### Authentication
 
-<img src="images/sign%20in.png" alt="Sign In — Get started with Signal" width="100%" />
-
-*Supabase Auth with email/password + Google OAuth. JWT middleware protects every API route.*
+<img src="images/sign%20in.png" alt="Sign in page" width="100%" />
 
 ---
 
-### 3. The Target — Competitor Pricing Page (Before)
+### Competitor Pricing — Before Scan
 
-<img src="images/competitors%20before.png" alt="Acme AI pricing page before changes — Starter $29, Pro $49, Enterprise $199" width="100%" />
+<img src="images/competitors%20before.png" alt="Competitor pricing page — Starter $29, Pro $49, Enterprise $199" width="100%" />
 
-*The competitor's live pricing page. Signal scrapes this via Bright Data and stores a structured JSON baseline. Starter: $29 · Pro: $49 · Enterprise: $199.*
-
----
-
-### 4. Dashboard — Baseline Established
-
-<img src="images/dashboard.png" alt="Signal Dashboard — Initial baseline established, Stable status" width="100%" />
-
-*First scan complete. Baseline snapshot stored in Acontext. Status: Stable. Strategic Insight: "Initial baseline established."*
+*The live pricing page Signal monitors. On first scan, this is stored as the baseline snapshot.*
 
 ---
 
-### 5. The Target — Competitor Changes Prices (After)
+### Dashboard — Baseline Established
 
-<img src="images/competitors%20after.png" alt="Acme AI pricing page after changes — Starter $49, Pro $99, Enterprise $149" width="100%" />
+<img src="images/dashboard.png" alt="Dashboard after first scan — stable, baseline established" width="100%" />
 
-*The competitor silently repriced. Starter: $49 · Pro: $99 · Enterprise: $149. Signal will catch this on the next scan.*
-
----
-
-### 6. Live Scan — Autonomous Competitive Analyst Activated
-
-<img src="images/analysis.png" alt="Signal live scan — Agent Thought Trace showing Fetching, Extracting, Comparing stages" width="100%" />
-
-*Real-time Agent Thought Trace: fetching HTML via Bright Data, parsing 3 pricing tiers, comparing against Acontext baseline. Stages animate as the pipeline executes.*
+*After the first scan, the pricing structure is stored in Acontext and displayed in the dashboard. Status: Stable.*
 
 ---
 
-### 7. Dashboard — Changes Detected
+### Competitor Pricing — After Price Change
 
-<img src="images/dashboard%20after.png" alt="Signal Dashboard — Changes Detected, Aggressive Expansion, Gemini AI insight" width="100%" />
+<img src="images/competitors%20after.png" alt="Competitor pricing page after change — Starter $49, Pro $99, Enterprise $149" width="100%" />
 
-*"Changes Detected — Acme AI made pricing modifications."* Delta is active: Starter **+69%**, Pro **+102%**, Enterprise **−25.1%**. Classification: **Aggressive Expansion**. Gemini 2.5 Flash generates the strategic insight in real time.
-
----
-
-### 8. Report — Pricing Delta
-
-<img src="images/before%20and%20after.png" alt="Signal Report — Pricing Delta showing before and after prices for all tiers" width="100%" />
-
-*Side-by-side pricing delta. Previous vs Current across all tiers with percent change indicators. Built from the structured JSON diff computed by the delta engine.*
+*The competitor repriced. Signal detects this on the next scan by comparing against the stored baseline.*
 
 ---
 
-### 9. Report — Strategic Intelligence
+### Live Scan — Agent Thought Trace
 
-<img src="images/reports%20after.png" alt="Signal Report — Strategic Insight from Gemini 2.5 Flash with context insight and pricing delta" width="100%" />
+<img src="images/analysis.png" alt="Live scan page showing Agent Thought Trace and stage pipeline" width="100%" />
 
-*The complete intelligence report: Pricing Delta → Context Insight ("Upward pricing shift may indicate strong demand or product maturity.") → Full Gemini 2.5 Flash strategic analysis. Generated autonomously. Zero manual research.*
+*The scan pipeline runs in real time: Bright Data fetches HTML, the parser extracts pricing tiers, and the delta engine compares against the Acontext baseline. Each step is shown as it executes.*
 
 ---
 
-## ⚡ Quick Start
+### Dashboard — Changes Detected
+
+<img src="images/dashboard%20after.png" alt="Dashboard showing pricing changes detected — Aggressive Expansion classification" width="100%" />
+
+*Signal surfaces the change with per-tier deltas (Starter +69%, Pro +102%, Enterprise −25.1%), a strategic classification, and a Gemini-generated insight — all on the main dashboard.*
+
+---
+
+### Report — Pricing Delta
+
+<img src="images/before%20and%20after.png" alt="Report page showing side-by-side pricing delta" width="100%" />
+
+*The report's pricing tab shows previous vs. current prices across all tiers with percentage change indicators.*
+
+---
+
+### Report — Strategic Intelligence
+
+<img src="images/reports%20after.png" alt="Full report with context insight and Gemini strategic analysis" width="100%" />
+
+*The complete intelligence report: pricing delta table, contextual insight, and a full Gemini 2.5 Flash strategic analysis. Generated autonomously.*
+
+---
+
+## Getting Started
 
 ### Prerequisites
 
-- **Node.js** 18+
-- **Supabase** account (free tier works)
-- **Gemini API key** (optional — returns placeholder if missing)
-- **Bright Data** MCP token or proxy credentials (optional — falls back to direct fetch)
-- **ActionBook** API key (optional — fallback when static scrape yields fewer than 2 tiers)
-- **Acontext** API key (optional — falls back to in-memory baseline)
+- Node.js 18+
+- Supabase account (free tier works)
+- Gemini API key
+- Bright Data MCP token or proxy credentials (optional — falls back to direct fetch)
+- ActionBook API key (optional — fallback for dynamic pages)
+- Acontext API key (optional — falls back to in-memory)
 
 ### Run locally
 
@@ -143,201 +116,195 @@ Built for **SaaS founders** and **product managers** who need to stay ahead of c
 git clone https://github.com/SuhaasNv/ACIA.git
 cd ACIA
 
-# Install
+# Install dependencies
 npm install
 cd server && npm install && cd ..
 
-# Configure (copy .env.example to .env and fill in keys)
+# Configure environment
 cp .env.example .env
+# Fill in your keys in .env
 
-# Run
-npm run dev          # Frontend → http://localhost:3000
-cd server && npm run dev   # Backend → http://localhost:3001
+# Start development servers
+npm run dev                    # Frontend → http://localhost:5173
+cd server && npm run dev       # Backend  → http://localhost:3001
 ```
 
 ---
 
-## 🏗 How It Works
+## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────────────────┐
-│                              ACIA — Scan Architecture                                    │
-└─────────────────────────────────────────────────────────────────────────────────────────┘
-
-┌─────────────┐     POST /api/scan      ┌─────────────────────────────────────────────────┐
-│   React     │ ─────────────────────► │              Express API (Node.js)               │
-│   (Vite)    │     + JWT Auth          │                                                 │
-└─────────────┘                         └─────────────────────┬───────────────────────────┘
-                                                              │
-         ┌────────────────────────────────────────────────────┼────────────────────────────────────────────────────┐
-         │                    │                    │                    │                    │                    │
-         ▼                    ▼                    ▼                    ▼                    ▼                    ▼
-┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
-│   Bright Data   │  │   ActionBook     │  │    Acontext      │  │    Supabase     │  │     Gemini      │  │  Delta Engine    │
-│   (Primary)     │  │   (Fallback)     │  │   (Memory)       │  │  (DB + Auth)    │  │   (Insights)    │  │  (≥5% → AI)      │
-└────────┬────────┘  └────────┬─────────┘  └────────┬─────────┘  └────────┬─────────┘  └────────┬─────────┘  └────────┬─────────┘
-         │                   │                     │                     │                     │                     │
-         │  MCP / Proxy /    │  Agent navigation   │  getLatestSnapshot  │  Competitors,       │  analyzeDelta()    │  computeLocalDelta
-         │  Direct fetch     │  when <2 tiers      │  setLatestSnapshot  │  Reports, Auth      │  (conditional)     │  (JSON diff)
-         │                   │                     │                     │                     │                     │
-         └───────────────────┴─────────────────────┴─────────────────────┴─────────────────────┴─────────────────────┘
-                                                              │
-                                                              ▼
-                                              ┌───────────────────────────────┐
-                                              │  1. Bright Data fetches HTML  │
-                                              │  2. Parse → tiers/prices        │
-                                              │  3. If <2 tiers → ActionBook    │
-                                              │  4. Acontext: load baseline    │
-                                              │  5. Delta ≥5%? → Gemini        │
-                                              │  6. Save report → Supabase     │
-                                              └───────────────────────────────┘
+┌─────────────┐     POST /api/scan      ┌──────────────────────────────────────┐
+│  React UI   │ ─────────────────────► │         Express API (Node.js)         │
+│  (Vite)     │     + JWT Auth          │                                      │
+└─────────────┘                         └──────────────────┬───────────────────┘
+                                                           │
+          ┌──────────────────────────────┬─────────────────┼──────────────────┬──────────────────┐
+          │                              │                 │                  │                  │
+          ▼                              ▼                 ▼                  ▼                  ▼
+  ┌───────────────┐             ┌────────────────┐  ┌────────────┐   ┌──────────────┐   ┌──────────────┐
+  │  Bright Data  │             │   ActionBook   │  │  Acontext  │   │   Supabase   │   │    Gemini    │
+  │  (Scraping)   │             │  (Web Agent)   │  │  (Memory)  │   │  (DB + Auth) │   │  (Insights)  │
+  └───────┬───────┘             └───────┬────────┘  └─────┬──────┘   └──────────────┘   └──────────────┘
+          │                             │                 │
+          │  MCP → Proxy → Direct       │  Agent nav      │  get/set latest snapshot
+          │  (with retries)             │  when <2 tiers  │  (per-user baseline)
+          └─────────────────────────────┴─────────────────┘
+                                        │
+                                        ▼
+                           ┌─────────────────────────┐
+                           │       Delta Engine       │
+                           │  JSON diff of snapshots  │
+                           │  ≥5% change → Gemini     │
+                           └─────────────────────────┘
 ```
 
-### Scan flow
+### Scan pipeline
 
-1. **Trigger** — User clicks Scan → `POST /api/scan`
-2. **Fetch** — Bright Data scrapes competitor URL (MCP → Proxy → Direct fallback)
-3. **Parse** — HTML → structured JSON (tiers, prices)
-4. **ActionBook fallback** — If &lt;2 tiers found, autonomous agent navigates to pricing page
-5. **Compare** — Delta engine vs. Acontext baseline snapshot
-6. **Conditional AI** — Gemini only if delta ≥5%
-7. **Store** — Report saved to Supabase, snapshot to Acontext
-
----
-
-## 🔌 Integrations & Use Cases
-
-### Bright Data — Primary Scraping Engine
-
-**Use case:** High-volume, standard SaaS pricing pages that aren't aggressively anti-bot or highly dynamic.
-
-**How it works:**
-- **Strategy 1 (MCP):** Bright Data Model Context Protocol — connects via SSE, calls `scrape_as_html` tool for clean HTML
-- **Strategy 2 (Proxy):** Bright Data residential proxy — routes requests through proxy for anti-bot bypass
-- **Strategy 3 (Direct):** Plain axios fetch with robust headers — fallback when credentials are missing
-
-**Flow:** Tries MCP → Proxy → Direct, with retries. Returns HTML for parsing. Used first for every scan.
+1. **Fetch** — Bright Data scrapes the competitor URL (MCP → Proxy → Direct, with retries)
+2. **Parse** — Raw HTML is parsed into structured JSON (tiers, prices)
+3. **Agent fallback** — If fewer than 2 tiers are found, ActionBook autonomously navigates to the pricing page
+4. **Baseline** — Acontext retrieves the previous snapshot for this user
+5. **Delta** — The diff engine computes changes; if no baseline exists, this is flagged as a first run
+6. **Insight** — Gemini 2.5 Flash is called only if the delta is ≥5%; otherwise skipped
+7. **Store** — The report is saved to Supabase; the new snapshot overwrites the Acontext baseline
 
 ---
 
-### ActionBook — Autonomous Web Agent (Fallback)
+## Integrations
 
-**Use case:** Dynamic pages (React/Next), pricing behind navigation, or when static scraping yields nothing.
+### Bright Data
 
-**When it triggers:**
-- Bright Data returns HTML but parser finds &lt;2 pricing tiers
-- User provides homepage URL instead of direct pricing URL
-- Pricing is behind interaction (e.g. "Pricing" link in nav)
+The primary scraping layer. Every scan starts here.
 
-**How it works:**
-- **`navigateToPricing()`** — Agent starts at homepage, uses goal "Find and navigate to the pricing page", clicks common selectors (`a[href*="pricing"]`, `a[href*="plans"]`, etc.), waits for pricing content
-- **`extractDynamicHtml()`** — Renders URL with `wait_for_selector` for `.pricing`, `.price`, `.tier`, etc.
+- **MCP (Model Context Protocol):** Connects via SSE to `mcp.brightdata.com`, calls the `scrape_as_html` tool for clean HTML
+- **Proxy:** Routes requests through Bright Data's residential proxy network for anti-bot bypass
+- **Direct:** Plain HTTP fetch with browser-like headers — used when no credentials are configured
 
-**Flow:** Only invoked when Bright Data + parser fail to extract sufficient tiers. Returns rendered HTML from the discovered pricing page.
+All three strategies are attempted in order with retries and exponential backoff.
 
 ---
 
-### Acontext — Memory & Baseline State
+### ActionBook
 
-**Use case:** "Time machine" for delta comparison — stores the latest pricing snapshot per user so we can detect changes over time.
+An autonomous web agent used as a fallback when static scraping returns insufficient pricing data.
 
-**How it works:**
-- **`getLatestSnapshot(userId)`** — Retrieves previous scan's structured JSON (tiers, prices) before comparing
-- **`setLatestSnapshot(userId, data)`** — Overwrites memory with new scan result after processing
-- **Key format:** `competitor:{userId}:latest_snapshot`
+Triggers when Bright Data + the HTML parser find fewer than 2 pricing tiers — typically because the user provided a homepage URL instead of a direct pricing page, or because the pricing is rendered dynamically.
 
-**Fallback:** If no API key, uses in-memory `Map` — works for single-instance dev, degrades gracefully.
-
-**Flow:** Called before delta computation (load baseline) and after scan completes (save new state).
+- `navigateToPricing(url)` — Starts from the homepage, identifies and clicks pricing-related navigation links, and returns the rendered pricing page HTML
+- `extractDynamicHtml(url)` — Renders a URL and waits for pricing-specific CSS selectors before returning content
 
 ---
 
-## 🛠 Tech Stack
+### Acontext
+
+The memory layer for per-user pricing baselines.
+
+- `getLatestSnapshot(userId)` — Retrieves the structured pricing JSON from the previous scan before computing the delta
+- `setLatestSnapshot(userId, data)` — Writes the new snapshot after a scan completes, overwriting the previous one
+
+Falls back to an in-memory `Map` if no API key is configured. The key format is `competitor:{userId}:latest_snapshot`.
+
+---
+
+## Tech Stack
 
 | Layer | Technologies |
-|-------|---------------|
-| **Frontend** | React 18, TypeScript, Vite, Tailwind CSS, shadcn/ui, Framer Motion, React Router |
-| **Backend** | Node.js, Express |
-| **Database & Auth** | Supabase (PostgreSQL, Auth) |
-| **Scraping** | Bright Data (MCP, Proxy, Direct), ActionBook (agent fallback for dynamic pages) |
-| **AI** | Google Gemini 2.5 Flash |
-| **Memory** | Acontext (baseline snapshots for delta comparison) |
+|---|---|
+| Frontend | React 18, TypeScript, Vite, Tailwind CSS, shadcn/ui, Framer Motion |
+| Backend | Node.js, Express |
+| Database & Auth | Supabase (PostgreSQL + Auth) |
+| Scraping | Bright Data (MCP, Proxy, Direct) |
+| Web Agent | ActionBook |
+| Memory | Acontext |
+| AI | Google Gemini 2.5 Flash |
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 ACIA/
-├── src/                    # Frontend (React + Vite)
-│   ├── components/         # UI (shadcn, custom)
-│   ├── contexts/           # Auth context
-│   ├── pages/              # Landing, Dashboard, Report, etc.
-│   └── lib/                # Supabase, API client
-├── server/                 # Backend API
+├── src/                        # Frontend (React + Vite)
+│   ├── components/             # UI components (shadcn + custom)
+│   ├── contexts/               # Auth context (Supabase)
+│   ├── pages/                  # Landing, Dashboard, Processing, Report
+│   └── lib/                    # API client, Supabase client
+├── server/                     # Backend (Node.js + Express)
 │   ├── src/
-│   │   ├── controllers/    # Scan controller
-│   │   ├── middleware/     # JWT auth
-│   │   ├── routes/         # API routes
-│   │   └── services/       # Bright Data, Gemini, diff engine
+│   │   ├── controllers/        # Scan controller
+│   │   ├── middleware/         # JWT authentication
+│   │   ├── routes/             # API route definitions
+│   │   └── services/           # brightdata, actionbook, acontext, gemini, diff
 │   └── server.js
-├── docs/                   # Architecture, user flow, API
-└── .env                    # Environment variables
+├── images/                     # Product screenshots
+├── docs/                       # Architecture and flow documentation
+└── .env.example                # Environment variable reference
 ```
 
 ---
 
-## 🔐 Environment Variables
+## Environment Variables
 
 | Variable | Required | Description |
-|----------|----------|-------------|
+|---|---|---|
 | `VITE_SUPABASE_URL` | Yes | Supabase project URL |
 | `VITE_SUPABASE_ANON_KEY` | Yes | Supabase anon key |
-| `SUPABASE_SERVICE_ROLE_KEY` | Yes | Backend admin access |
-| `GEMINI_API_KEY` | No | Returns placeholder if missing |
-| `BRIGHTDATA_MCP_TOKEN` | No | Bright Data MCP token (primary scraping; falls back to proxy/direct) |
-| `BRIGHTDATA_PROXY_HOST`, `BRIGHTDATA_USERNAME`, `BRIGHTDATA_PASSWORD` | No | Bright Data proxy (fallback if MCP fails) |
-| `ACTIONBOOK_API_KEY` | No | ActionBook agent (fallback when &lt;2 tiers from static scrape) |
-| `ACONTEXT_API_KEY` | No | Acontext memory (falls back to in-memory for baseline) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Yes | Backend service role key |
+| `GEMINI_API_KEY` | Yes | Google Gemini API key |
+| `BRIGHTDATA_MCP_TOKEN` | No | Bright Data MCP token (primary) |
+| `BRIGHTDATA_PROXY_HOST` | No | Bright Data proxy host |
+| `BRIGHTDATA_USERNAME` | No | Bright Data proxy username |
+| `BRIGHTDATA_PASSWORD` | No | Bright Data proxy password |
+| `ACTIONBOOK_API_KEY` | No | ActionBook agent API key |
+| `ACONTEXT_API_KEY` | No | Acontext memory API key |
 
-See `.env.example` for the full list.
+See `.env.example` for the full list with defaults.
 
 ---
 
-## 📜 API
+## API Reference
 
 ### `POST /api/scan`
 
-Runs a competitive intelligence scan. Requires JWT in `Authorization: Bearer <token>`.
+Triggers a full competitive intelligence scan for the authenticated user's configured competitor.
 
-**Success response:**
+**Headers:** `Authorization: Bearer <jwt>`
+
+**Response:**
 ```json
 {
-  "status": "completed",
   "isFirstRun": false,
   "hasSignificantChange": true,
-  "delta": { "changes": [...] },
-  "insight": "Strategic insight text...",
-  "classification": "Critical"
+  "classification": "Aggressive Expansion",
+  "insight": "Strategic analysis text...",
+  "delta": {
+    "changes": [
+      { "tier": "Pro", "old_price": 49, "current_price": 99, "percent_change": 102.0, "type": "increased" }
+    ]
+  },
+  "scanMeta": {
+    "dataSource": "brightdata",
+    "actionBookUsed": false,
+    "tiersFound": 3,
+    "durationMs": 8500,
+    "steps": [...]
+  }
 }
 ```
 
 ---
 
-## 📚 Documentation
+## Documentation
 
-- [Architecture](docs/architecture.md) — System design, data flow
-- [User Flow](docs/userflow.md) — User journey, scan flow
-- [UI Flow](docs/ui-flow.md) — Page states, interactions
+- [Architecture](docs/architecture.md)
+- [User Flow](docs/userflow.md)
+- [UI Flow](docs/ui-flow.md)
 
 ---
 
 <div align="center">
 
-### 👤 Built with ❤️ by [Suhaas](https://github.com/SuhaasNv)
-
-*One developer. Full stack. Hackathon-ready.*
-
-**[⭐ Star this repo](https://github.com/SuhaasNv/ACIA)** if you found it useful!
+Built by [Suhaas](https://github.com/SuhaasNv)
 
 </div>
