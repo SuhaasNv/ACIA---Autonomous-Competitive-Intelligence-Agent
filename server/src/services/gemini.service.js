@@ -17,7 +17,7 @@ async function analyzeDelta(deltaJson) {
         const genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY, {
             apiVersion: "v1beta",
         });
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+        const model = genAI.getGenerativeModel({ model: env.GEMINI_MODEL || "gemini-2.5-flash" });
 
         const prompt = `
 You are a competitive intelligence analyst. Analyze this competitor pricing change and respond ONLY with a valid JSON object — no markdown, no extra text, no code fences.

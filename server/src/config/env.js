@@ -21,6 +21,7 @@ const env = {
     ACONTEXT_API_URL: process.env.ACONTEXT_API_URL || 'https://api.acontext.ai/v1',
     ACONTEXT_API_KEY: process.env.ACONTEXT_API_KEY,
     GEMINI_API_KEY: process.env.GEMINI_API_KEY,
+    GEMINI_MODEL: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
 };
 
 module.exports = { env };
