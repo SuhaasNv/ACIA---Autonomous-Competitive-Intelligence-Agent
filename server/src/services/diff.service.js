@@ -1,10 +1,20 @@
 /**
  * Compares old and new pricing snapshots.
- * Returns delta object and boolean flags for significant changes.
+ * Returns delta object with changes AND current_pricing, plus boolean flags.
  */
 function computeLocalDelta(oldSnapshot, newSnapshot) {
+    // Always include current pricing in the delta for display purposes
+    const currentPricing = newSnapshot?.pricing || [];
+    
     if (!oldSnapshot || !oldSnapshot.pricing) {
-        return { isFirstRun: true, hasSignificantChange: false, delta: newSnapshot };
+        return { 
+            isFirstRun: true, 
+            hasSignificantChange: false, 
+            delta: { 
+                changes: [],
+                current_pricing: currentPricing 
+            } 
+        };
     }
 
     const oldMap = new Map(oldSnapshot.pricing.map(p => [p.tier, p.price]));
@@ -45,7 +55,10 @@ function computeLocalDelta(oldSnapshot, newSnapshot) {
     return {
         isFirstRun: false,
         hasSignificantChange: changes.length > 0 && absoluteChangeExceedsThreshold,
-        delta: { changes }
+        delta: { 
+            changes,
+            current_pricing: currentPricing 
+        }
     };
 }
 

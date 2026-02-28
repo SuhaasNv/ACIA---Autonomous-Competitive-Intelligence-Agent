@@ -12,11 +12,19 @@ interface PricingChange {
   percent_change?: number;
 }
 
+interface PricingTier {
+  tier: string;
+  price: number;
+}
+
 interface ReportData {
   competitor?: { name: string; url: string };
   classification: string;
   last_scan_time: string;
-  delta?: { changes?: PricingChange[] };
+  delta?: { 
+    changes?: PricingChange[];
+    current_pricing?: PricingTier[];
+  };
   insight?: string;
 }
 
@@ -37,55 +45,108 @@ const badgeStyles: Record<string, string> = {
 
 const PricingPanel = ({ report }: { report: ReportData }) => {
   const changes = report.delta?.changes || [];
+  const currentPricing = report.delta?.current_pricing || [];
 
   return (
-    <div className="space-y-4">
-      <div className="rounded-xl border border-border/50 bg-card overflow-hidden">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-border/50">
-              <th className="text-left px-5 py-3 text-xs font-medium text-muted-foreground">Tier</th>
-              <th className="text-left px-5 py-3 text-xs font-medium text-muted-foreground">Previous</th>
-              <th className="text-left px-5 py-3 text-xs font-medium text-muted-foreground">Current</th>
-              <th className="text-right px-5 py-3 text-xs font-medium text-muted-foreground">Change</th>
-            </tr>
-          </thead>
-          <tbody>
-            {changes.length > 0 ? (
-              changes.map((row, i) => (
-                <tr key={i} className="border-b border-border/30 last:border-0 hover:bg-muted/20 transition-colors">
-                  <td className="px-5 py-3 font-medium text-foreground">{row.tier}</td>
-                  <td className="px-5 py-3 text-muted-foreground">{row.old_price ? `$${row.old_price}` : '-'}</td>
-                  <td className="px-5 py-3 text-foreground">{row.current_price ? `$${row.current_price}` : '-'}</td>
-                  <td className="px-5 py-3 text-right">
-                    {row.type === 'increased' || row.type === 'added' ? (
-                      <span className="inline-flex items-center gap-0.5 text-warning text-sm font-medium">
-                        <ArrowUpRight className="h-3 w-3" />+{row.percent_change?.toFixed(1) || 0}%
-                      </span>
-                    ) : row.type === 'decreased' ? (
-                      <span className="inline-flex items-center gap-0.5 text-success text-sm font-medium">
-                        <ArrowDownRight className="h-3 w-3" />-{row.percent_change?.toFixed(1) || 0}%
-                      </span>
-                    ) : row.type === 'removed' ? (
-                      <span className="inline-flex items-center gap-0.5 text-destructive text-sm font-medium">
-                        <Minus className="h-3 w-3" />Removed
-                      </span>
-                    ) : (
-                      <span className="text-muted-foreground text-sm">No change</span>
-                    )}
+    <div className="space-y-6">
+      {/* Current Pricing Section */}
+      <div>
+        <h3 className="text-sm font-medium text-foreground mb-3">Current Pricing Tiers</h3>
+        <div className="rounded-xl border border-border/50 bg-card overflow-hidden">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border/50">
+                <th className="text-left px-5 py-3 text-xs font-medium text-muted-foreground">Tier</th>
+                <th className="text-left px-5 py-3 text-xs font-medium text-muted-foreground">Price</th>
+                <th className="text-right px-5 py-3 text-xs font-medium text-muted-foreground">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {currentPricing.length > 0 ? (
+                currentPricing.map((tier, i) => {
+                  const change = changes.find(c => c.tier === tier.tier);
+                  return (
+                    <tr key={i} className="border-b border-border/30 last:border-0 hover:bg-muted/20 transition-colors">
+                      <td className="px-5 py-3 font-medium text-foreground">{tier.tier}</td>
+                      <td className="px-5 py-3 text-foreground font-semibold">${tier.price.toFixed(2)}</td>
+                      <td className="px-5 py-3 text-right">
+                        {change ? (
+                          <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${
+                            change.type === 'increased' ? "bg-warning/10 text-warning" : 
+                            change.type === 'decreased' ? "bg-success/10 text-success" : 
+                            change.type === 'added' ? "bg-primary/10 text-primary" : 
+                            "bg-muted text-muted-foreground"
+                          }`}>
+                            {change.type === 'increased' && <ArrowUpRight className="h-3 w-3" />}
+                            {change.type === 'decreased' && <ArrowDownRight className="h-3 w-3" />}
+                            {change.type === 'increased' ? `+${change.percent_change?.toFixed(1)}%` : 
+                             change.type === 'decreased' ? `-${change.percent_change?.toFixed(1)}%` : 
+                             change.type === 'added' ? 'New' : 'Changed'}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">Stable</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td colSpan={3} className="px-5 py-6 text-center text-muted-foreground text-sm">
+                    No pricing data available.
                   </td>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={4} className="px-5 py-6 text-center text-muted-foreground text-sm">
-                  No pricing changes detected.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
+
+      {/* Recent Changes Section (if any) */}
+      {changes.length > 0 && (
+        <div>
+          <h3 className="text-sm font-medium text-foreground mb-3">Recent Changes</h3>
+          <div className="rounded-xl border border-border/50 bg-card overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border/50">
+                  <th className="text-left px-5 py-3 text-xs font-medium text-muted-foreground">Tier</th>
+                  <th className="text-left px-5 py-3 text-xs font-medium text-muted-foreground">Previous</th>
+                  <th className="text-left px-5 py-3 text-xs font-medium text-muted-foreground">Current</th>
+                  <th className="text-right px-5 py-3 text-xs font-medium text-muted-foreground">Change</th>
+                </tr>
+              </thead>
+              <tbody>
+                {changes.map((row, i) => (
+                  <tr key={i} className="border-b border-border/30 last:border-0 hover:bg-muted/20 transition-colors">
+                    <td className="px-5 py-3 font-medium text-foreground">{row.tier}</td>
+                    <td className="px-5 py-3 text-muted-foreground">{row.old_price ? `$${row.old_price}` : '—'}</td>
+                    <td className="px-5 py-3 text-foreground">{row.current_price ? `$${row.current_price}` : '—'}</td>
+                    <td className="px-5 py-3 text-right">
+                      {row.type === 'increased' || row.type === 'added' ? (
+                        <span className="inline-flex items-center gap-0.5 text-warning text-sm font-medium">
+                          <ArrowUpRight className="h-3 w-3" />
+                          {row.type === 'added' ? 'New' : `+${row.percent_change?.toFixed(1) || 0}%`}
+                        </span>
+                      ) : row.type === 'decreased' ? (
+                        <span className="inline-flex items-center gap-0.5 text-success text-sm font-medium">
+                          <ArrowDownRight className="h-3 w-3" />-{row.percent_change?.toFixed(1) || 0}%
+                        </span>
+                      ) : row.type === 'removed' ? (
+                        <span className="inline-flex items-center gap-0.5 text-destructive text-sm font-medium">
+                          <Minus className="h-3 w-3" />Removed
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">No change</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
