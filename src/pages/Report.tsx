@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { ArrowUpRight, ArrowDownRight, Minus, Lightbulb, Radar, Info } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, Minus, Lightbulb, Radar, Info, TrendingUp, TrendingDown, PlusCircle, MinusCircle } from "lucide-react";
 import AppSidebar from "@/components/AppSidebar";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
@@ -16,6 +16,41 @@ const ChangeIndicator = ({ type, percent }: { type: string; percent?: number }) 
   }
   return <span className="inline-flex items-center gap-0.5 text-muted-foreground text-sm"><Minus className="h-3 w-3" />No change</span>;
 };
+
+// ─── Competitive Context Insight ────────────────────────────────────────────
+
+type ChangeType = 'increased' | 'decreased' | 'added' | 'removed' | string;
+
+const contextInsights: Record<string, { icon: React.ComponentType<{ className?: string }>; text: string; color: string }> = {
+  increased: {
+    icon: TrendingUp,
+    text: "Upward pricing shift may indicate strong demand or product maturity.",
+    color: "border-warning/20 bg-warning/5 text-warning",
+  },
+  decreased: {
+    icon: TrendingDown,
+    text: "Downward pricing pressure may signal a competitive response or market repositioning.",
+    color: "border-success/20 bg-success/5 text-success",
+  },
+  added: {
+    icon: PlusCircle,
+    text: "New tier introduction suggests market segmentation or a deliberate upsell strategy.",
+    color: "border-primary/20 bg-primary/5 text-primary",
+  },
+  removed: {
+    icon: MinusCircle,
+    text: "Tier removal may reflect portfolio simplification or forced customer migration.",
+    color: "border-destructive/20 bg-destructive/5 text-destructive",
+  },
+};
+
+function getDominantChangeType(changes: { type: string }[]): ChangeType | null {
+  const priority: ChangeType[] = ['increased', 'added', 'removed', 'decreased'];
+  for (const p of priority) {
+    if (changes.some(c => c.type === p)) return p;
+  }
+  return null;
+}
 
 const ReportPage = () => {
   const { data: response, isLoading, isError } = useQuery({
@@ -128,6 +163,28 @@ const ReportPage = () => {
               </table>
             </div>
           </motion.section>
+
+          {/* Competitive Context Insight */}
+          {(() => {
+            const changes = report.delta?.changes ?? [];
+            const dominant = getDominantChangeType(changes);
+            const ctx = dominant ? contextInsights[dominant] : null;
+            if (!ctx) return null;
+            const Icon = ctx.icon;
+            return (
+              <motion.section
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2, duration: 0.5 }}
+                className="mb-6"
+              >
+                <div className={`flex items-start gap-3 rounded-xl border px-4 py-3 ${ctx.color}`}>
+                  <Icon className="h-4 w-4 mt-0.5 shrink-0 opacity-80" />
+                  <p className="text-sm leading-relaxed">{ctx.text}</p>
+                </div>
+              </motion.section>
+            );
+          })()}
 
           {/* Strategic Insight */}
           <motion.section
