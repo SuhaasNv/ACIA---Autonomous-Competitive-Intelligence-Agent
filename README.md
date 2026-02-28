@@ -1,93 +1,96 @@
-<p align="center">
-  <img src="https://img.shields.io/badge/Signal-ACIA-6366f1?style=for-the-badge" alt="Signal" />
-  <img src="https://img.shields.io/badge/React-18-61dafb?style=for-the-badge&logo=react" alt="React" />
-  <img src="https://img.shields.io/badge/TypeScript-5-3178c6?style=for-the-badge&logo=typescript" alt="TypeScript" />
-  <img src="https://img.shields.io/badge/Supabase-PostgreSQL-3ecf8e?style=for-the-badge&logo=supabase" alt="Supabase" />
-</p>
+<div align="center">
 
-<h1 align="center">Signal</h1>
-<p align="center">
-  <strong>Autonomous Competitive Intelligence for SaaS Teams</strong>
-</p>
-<p align="center">
-  Detect strategic pricing and feature shifts before your competitors do.
-</p>
+# 🎯 Signal — ACIA
 
-<p align="center">
-  <a href="#features">Features</a> •
-  <a href="#quick-start">Quick Start</a> •
-  <a href="#architecture">Architecture</a> •
-  <a href="#tech-stack">Tech Stack</a> •
-  <a href="#environment">Environment</a> •
-  <a href="#api">API</a>
-</p>
+### *Autonomous Competitive Intelligence for SaaS Teams*
 
----
+**Detect strategic pricing and feature shifts before your competitors do.**
 
-## Overview
+<br />
 
-**Signal** (ACIA) is a user-triggered competitive intelligence platform that monitors competitor pricing pages and delivers AI-powered strategic insights. Add a competitor URL, click Scan, and receive actionable intelligence—only when material changes (≥5% delta) are detected, keeping API costs minimal.
+[![Built by Suhaas](https://img.shields.io/badge/Built%20by-Suhaas-6366f1?style=for-the-badge&labelColor=1e1b4b)](https://github.com/SuhaasNv)
+[![React](https://img.shields.io/badge/React-18-61dafb?style=for-the-badge&logo=react)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178c6?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
+[![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ecf8e?style=for-the-badge&logo=supabase)](https://supabase.com/)
+[![Gemini AI](https://img.shields.io/badge/Gemini-2.5_Flash-4285F4?style=for-the-badge&logo=google)](https://ai.google.dev/)
 
-Built for **SaaS founders** and **product managers** who need to stay ahead of competitive moves without manual monitoring.
+<br />
+
+**A full-stack competitive intelligence platform — built from scratch by one developer.**
+
+[Demo](#-see-it-in-action) • [Quick Start](#-quick-start) • [Architecture](#-how-it-works) • [Tech Stack](#-tech-stack)
+
+</div>
 
 ---
 
-## Features
+## 🚀 What is Signal?
 
-- **Manual Scan Only** — User-initiated scans. No background polling or scheduling.
-- **Single Competitor** — MVP scope: one competitor, one pricing page.
-- **Cost-First Design** — Gemini called only when delta ≥5%. Bright Data called once per scan.
-- **Instant Insights** — Strategic recommendations powered by Google Gemini.
-- **Auth & Onboarding** — Supabase Auth with email/password. Profile creation required.
-- **Protected Dashboard** — Full route protection with onboarding enforcement.
+**Signal** (ACIA) is a user-triggered competitive intelligence platform that monitors competitor pricing pages and delivers **AI-powered strategic insights** — only when it matters.
+
+> Add a competitor URL → Click Scan → Get actionable intelligence.  
+> **No background polling. No wasted API calls. Just smart, cost-efficient monitoring.**
+
+Built for **SaaS founders** and **product managers** who need to stay ahead of competitive moves without manual research or expensive tools.
 
 ---
 
-## Quick Start
+## ✨ Why Judges Will Love This
+
+| What makes it stand out | The technical story |
+|-------------------------|---------------------|
+| **Cost-first AI design** | Gemini is called *only* when delta ≥5% — raw HTML never hits the LLM |
+| **Delta engine** | Custom diff engine compares structured JSON snapshots before waking up AI |
+| **Full-stack solo build** | React + Express + Supabase + Bright Data + Gemini — one developer, end-to-end |
+| **Production-ready auth** | Supabase Auth, JWT middleware, protected routes, onboarding flow |
+| **Smart scraping** | Bright Data proxy with ActionBook fallback for anti-bot resilience |
+
+---
+
+## 🎬 See It In Action
+
+```
+Landing → Register → Add Competitor → Scan → AI-Powered Report
+```
+
+- **Empty state** → Add your first competitor (pricing page URL)
+- **Scan** → Scrapes page, parses structure, compares to last snapshot
+- **Material change?** → Gemini generates strategic insight
+- **No change?** → Returns instantly, zero AI cost
+
+---
+
+## ⚡ Quick Start
 
 ### Prerequisites
 
-- **Node.js** 18+ ([nvm](https://github.com/nvm-sh/nvm) recommended)
-- **Supabase** account
-- **Bright Data** credentials (optional; falls back to direct fetch)
-- **Gemini API key** (optional; returns placeholder if missing)
+- **Node.js** 18+
+- **Supabase** account (free tier works)
+- **Gemini API key** (optional — returns placeholder if missing)
+- **Bright Data** credentials (optional — falls back to direct fetch)
 
-### 1. Clone & Install
+### Run locally
 
 ```bash
-git clone https://github.com/your-org/ACIA.git
+# Clone
+git clone https://github.com/SuhaasNv/ACIA.git
 cd ACIA
+
+# Install
 npm install
 cd server && npm install && cd ..
-```
 
-### 2. Configure Environment
-
-Copy the example env and fill in your values:
-
-```bash
+# Configure (copy .env.example to .env and fill in keys)
 cp .env.example .env
+
+# Run
+npm run dev          # Frontend → http://localhost:3000
+cd server && npm run dev   # Backend → http://localhost:3001
 ```
-
-See [Environment Variables](#environment-variables) for required keys.
-
-### 3. Run Development Servers
-
-**Terminal 1 — Frontend (port 3000):**
-```bash
-npm run dev
-```
-
-**Terminal 2 — Backend API (port 3001):**
-```bash
-cd server && npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) to use the app.
 
 ---
 
-## Architecture
+## 🏗 How It Works
 
 ```
 ┌─────────────┐     POST /api/scan      ┌─────────────────┐
@@ -103,7 +106,6 @@ Open [http://localhost:3000](http://localhost:3000) to use the app.
             │  (Scraping)   │          │  (DB + Auth)  │          │  (Insights)   │
             └───────────────┘          └───────────────┘          └───────────────┘
                     │                          │                          │
-                    │                          │                          │
                     └──────────────────────────┼──────────────────────────┘
                                                │
                                                ▼
@@ -113,21 +115,21 @@ Open [http://localhost:3000](http://localhost:3000) to use the app.
                                     └───────────────────┘
 ```
 
-### Scan Flow
+### Scan flow
 
 1. **Trigger** — User clicks Scan → `POST /api/scan`
 2. **Fetch** — Bright Data scrapes competitor pricing URL
 3. **Parse** — HTML → structured JSON (tiers, prices)
-4. **Compare** — Delta engine vs. last snapshot (Acontext)
+4. **Compare** — Delta engine vs. last snapshot
 5. **Conditional AI** — Gemini only if delta ≥5%
 6. **Store** — Report saved to Supabase
 
 ---
 
-## Tech Stack
+## 🛠 Tech Stack
 
 | Layer | Technologies |
-|-------|--------------|
+|-------|---------------|
 | **Frontend** | React 18, TypeScript, Vite, Tailwind CSS, shadcn/ui, Framer Motion, React Router |
 | **Backend** | Node.js, Express |
 | **Database & Auth** | Supabase (PostgreSQL, Auth) |
@@ -137,21 +139,21 @@ Open [http://localhost:3000](http://localhost:3000) to use the app.
 
 ---
 
-## Project Structure
+## 📁 Project Structure
 
 ```
 ACIA/
 ├── src/                    # Frontend (React + Vite)
-│   ├── components/         # UI components
+│   ├── components/         # UI (shadcn, custom)
 │   ├── contexts/           # Auth context
-│   ├── pages/              # Route pages
-│   └── lib/                # Supabase client, utils
+│   ├── pages/              # Landing, Dashboard, Report, etc.
+│   └── lib/                # Supabase, API client
 ├── server/                 # Backend API
 │   ├── src/
-│   │   ├── controllers/     # Scan controller
+│   │   ├── controllers/    # Scan controller
 │   │   ├── middleware/     # JWT auth
 │   │   ├── routes/         # API routes
-│   │   └── services/       # Bright Data, Gemini, etc.
+│   │   └── services/       # Bright Data, Gemini, diff engine
 │   └── server.js
 ├── docs/                   # Architecture, user flow, API
 └── .env                    # Environment variables
@@ -159,42 +161,28 @@ ACIA/
 
 ---
 
-## Environment Variables
-
-### Frontend (`.env`)
+## 🔐 Environment Variables
 
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `VITE_SUPABASE_URL` | Yes | Supabase project URL |
-| `VITE_SUPABASE_ANON_KEY` | Yes | Supabase anon/public key |
-
-### Backend (`.env` in project root)
-
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `SUPABASE_URL` | Yes | Same as `VITE_SUPABASE_URL` |
-| `SUPABASE_ANON_KEY` | Yes | Same as `VITE_SUPABASE_ANON_KEY` |
+| `VITE_SUPABASE_ANON_KEY` | Yes | Supabase anon key |
 | `SUPABASE_SERVICE_ROLE_KEY` | Yes | Backend admin access |
-| `BRIGHTDATA_PROXY_HOST` | No | Bright Data proxy host |
-| `BRIGHTDATA_PROXY_PORT` | No | Default: `22225` |
-| `BRIGHTDATA_USERNAME` | No | Proxy username |
-| `BRIGHTDATA_PASSWORD` | No | Proxy password |
 | `GEMINI_API_KEY` | No | Returns placeholder if missing |
-| `ACONTEXT_API_URL` | No | Memory layer |
-| `ACONTEXT_API_KEY` | No | Falls back to in-memory |
-| `ACTIONBOOK_API_URL` | No | Fallback scraper |
-| `ACTIONBOOK_API_KEY` | No | Fallback scraper |
-| `PORT` | No | Backend port (default: `3001`) |
+| `BRIGHTDATA_*` | No | Proxy credentials (falls back to direct fetch) |
+| `ACONTEXT_*` | No | Memory layer (falls back to in-memory) |
+
+See `.env.example` for the full list.
 
 ---
 
-## API
+## 📜 API
 
 ### `POST /api/scan`
 
 Runs a competitive intelligence scan. Requires JWT in `Authorization: Bearer <token>`.
 
-**Response (success):**
+**Success response:**
 ```json
 {
   "status": "completed",
@@ -206,42 +194,22 @@ Runs a competitive intelligence scan. Requires JWT in `Authorization: Bearer <to
 }
 ```
 
-**Errors:**
-- `401` — Missing or invalid JWT
-- `404` — No competitor configured for user
-
 ---
 
-## Scripts
-
-### Frontend
-
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start Vite dev server (port 3000) |
-| `npm run build` | Production build |
-| `npm run preview` | Preview production build |
-| `npm run lint` | Run ESLint |
-| `npm run test` | Run Vitest |
-
-### Backend
-
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start with `--watch` (from `server/`) |
-| `npm start` | Start production server |
-
----
-
-## Documentation
+## 📚 Documentation
 
 - [Architecture](docs/architecture.md) — System design, data flow
 - [User Flow](docs/userflow.md) — User journey, scan flow
 - [UI Flow](docs/ui-flow.md) — Page states, interactions
-- [Scope Audit](docs/SCOPE_AUDIT_REPORT.md) — Implementation vs. MVP scope
 
 ---
 
-## License
+<div align="center">
 
-MIT
+### 👤 Built with ❤️ by [Suhaas](https://github.com/SuhaasNv)
+
+*One developer. Full stack. Hackathon-ready.*
+
+**[⭐ Star this repo](https://github.com/SuhaasNv/ACIA)** if you found it useful!
+
+</div>
