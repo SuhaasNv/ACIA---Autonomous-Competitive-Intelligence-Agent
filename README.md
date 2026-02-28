@@ -49,14 +49,79 @@ Built for **SaaS founders** and **product managers** who need to stay ahead of c
 
 ## 🎬 See It In Action
 
-```
-Landing → Register → Add Competitor → Scan → AI-Powered Report
-```
+> The full journey from landing page to AI-powered strategic report — end to end.
 
-- **Empty state** → Add your first competitor (pricing page URL)
-- **Scan** → Scrapes page, parses structure, compares to last snapshot
-- **Material change?** → Gemini generates strategic insight
-- **No change?** → Returns instantly, zero AI cost
+---
+
+### 1. Landing Page
+
+<img src="images/landing.png" alt="Signal Landing Page — Autonomous Competitive Intelligence for SaaS Teams" width="100%" />
+
+*"Autonomous Competitive Intelligence for SaaS Teams." — clean, focused, production-ready.*
+
+---
+
+### 2. Secure Authentication
+
+<img src="images/sign%20in.png" alt="Sign In — Get started with Signal" width="100%" />
+
+*Supabase Auth with email/password + Google OAuth. JWT middleware protects every API route.*
+
+---
+
+### 3. The Target — Competitor Pricing Page (Before)
+
+<img src="images/competitors%20before.png" alt="Acme AI pricing page before changes — Starter $29, Pro $49, Enterprise $199" width="100%" />
+
+*The competitor's live pricing page. Signal scrapes this via Bright Data and stores a structured JSON baseline. Starter: $29 · Pro: $49 · Enterprise: $199.*
+
+---
+
+### 4. Dashboard — Baseline Established
+
+<img src="images/dashboard.png" alt="Signal Dashboard — Initial baseline established, Stable status" width="100%" />
+
+*First scan complete. Baseline snapshot stored in Acontext. Status: Stable. Strategic Insight: "Initial baseline established."*
+
+---
+
+### 5. The Target — Competitor Changes Prices (After)
+
+<img src="images/competitors%20after.png" alt="Acme AI pricing page after changes — Starter $49, Pro $99, Enterprise $149" width="100%" />
+
+*The competitor silently repriced. Starter: $49 · Pro: $99 · Enterprise: $149. Signal will catch this on the next scan.*
+
+---
+
+### 6. Live Scan — Autonomous Competitive Analyst Activated
+
+<img src="images/analysis.png" alt="Signal live scan — Agent Thought Trace showing Fetching, Extracting, Comparing stages" width="100%" />
+
+*Real-time Agent Thought Trace: fetching HTML via Bright Data, parsing 3 pricing tiers, comparing against Acontext baseline. Stages animate as the pipeline executes.*
+
+---
+
+### 7. Dashboard — Changes Detected
+
+<img src="images/dashboard%20after.png" alt="Signal Dashboard — Changes Detected, Aggressive Expansion, Gemini AI insight" width="100%" />
+
+*"Changes Detected — Acme AI made pricing modifications."* Delta is active: Starter **+69%**, Pro **+102%**, Enterprise **−25.1%**. Classification: **Aggressive Expansion**. Gemini 2.5 Flash generates the strategic insight in real time.
+
+---
+
+### 8. Report — Pricing Delta
+
+<img src="images/before%20and%20after.png" alt="Signal Report — Pricing Delta showing before and after prices for all tiers" width="100%" />
+
+*Side-by-side pricing delta. Previous vs Current across all tiers with percent change indicators. Built from the structured JSON diff computed by the delta engine.*
+
+---
+
+### 9. Report — Strategic Intelligence
+
+<img src="images/reports%20after.png" alt="Signal Report — Strategic Insight from Gemini 2.5 Flash with context insight and pricing delta" width="100%" />
+
+*The complete intelligence report: Pricing Delta → Context Insight ("Upward pricing shift may indicate strong demand or product maturity.") → Full Gemini 2.5 Flash strategic analysis. Generated autonomously. Zero manual research.*
 
 ---
 
