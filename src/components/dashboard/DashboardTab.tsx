@@ -16,6 +16,11 @@ interface PricingChange {
   percent_change?: number;
 }
 
+interface PricingTier {
+  tier: string;
+  price: number;
+}
+
 const riskColors: Record<string, { badge: string; dot: string }> = {
   High: { badge: "border-destructive/40 bg-destructive/10 text-destructive glow-badge-critical", dot: "bg-destructive animate-pulse" },
   Warning: { badge: "border-warning/40 bg-warning/10 text-warning glow-badge-warning", dot: "bg-warning animate-pulse" },
@@ -230,39 +235,49 @@ const DashboardTab = () => {
 
       {/* Bottom row */}
       <div className="grid lg:grid-cols-5 gap-4">
-        {/* Mini Pricing Delta */}
+        {/* Current Pricing & Changes */}
         <div className="lg:col-span-3">
-          <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Latest Pricing Delta — {competitor.name}</h2>
+          <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
+            Current Pricing — {competitor.name}
+          </h2>
           <div className="rounded-xl border border-border/50 bg-card overflow-hidden">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border/50">
                   <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground">Tier</th>
-                  <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground">Previous</th>
-                  <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground">Current</th>
+                  <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground">Price</th>
                   <th className="text-right px-4 py-2.5 text-xs font-medium text-muted-foreground">Change</th>
                 </tr>
               </thead>
               <tbody>
                 {isRepLoading ? (
-                  <tr><td colSpan={4} className="px-4 py-4 text-center text-xs text-muted-foreground">Loading...</td></tr>
+                  <tr><td colSpan={3} className="px-4 py-4 text-center text-xs text-muted-foreground">Loading...</td></tr>
                 ) : !isSetup ? (
-                  <tr><td colSpan={4} className="px-4 py-4 text-center text-xs text-muted-foreground">No scans completed.</td></tr>
-                ) : hasChanges ? (
-                  report.delta.changes.map((row: PricingChange, i: number) => (
-                    <tr key={i} className="border-b border-border/30 last:border-0 hover:bg-muted/20 transition-colors">
-                      <td className="px-4 py-2.5 font-medium text-foreground text-xs">{row.tier}</td>
-                      <td className="px-4 py-2.5 text-muted-foreground text-xs">{row.old_price ? `$${row.old_price}` : '-'}</td>
-                      <td className="px-4 py-2.5 text-foreground text-xs">{row.current_price ? `$${row.current_price}` : '-'}</td>
-                      <td className="px-4 py-2.5 text-right">
-                        <span className={`text-xs font-medium ${row.type === 'increased' ? "text-warning" : row.type === 'decreased' ? "text-success" : "text-muted-foreground"}`}>
-                          {row.type === 'increased' ? '+' : row.type === 'decreased' ? '-' : ''}{row.percent_change?.toFixed(1) || 0}%
-                        </span>
-                      </td>
-                    </tr>
-                  ))
+                  <tr><td colSpan={3} className="px-4 py-4 text-center text-xs text-muted-foreground">No scans completed.</td></tr>
+                ) : report.delta?.current_pricing && report.delta.current_pricing.length > 0 ? (
+                  (report.delta.current_pricing as PricingTier[]).map((tier: PricingTier, i: number) => {
+                    // Find if there's a change for this tier
+                    const change = report.delta?.changes?.find((c: PricingChange) => c.tier === tier.tier);
+                    return (
+                      <tr key={i} className="border-b border-border/30 last:border-0 hover:bg-muted/20 transition-colors">
+                        <td className="px-4 py-2.5 font-medium text-foreground text-xs">{tier.tier}</td>
+                        <td className="px-4 py-2.5 text-foreground text-xs font-semibold">${tier.price.toFixed(2)}</td>
+                        <td className="px-4 py-2.5 text-right">
+                          {change ? (
+                            <span className={`text-xs font-medium ${change.type === 'increased' ? "text-warning" : change.type === 'decreased' ? "text-success" : change.type === 'added' ? "text-primary" : "text-muted-foreground"}`}>
+                              {change.type === 'increased' ? `+${change.percent_change?.toFixed(1)}%` : 
+                               change.type === 'decreased' ? `-${change.percent_change?.toFixed(1)}%` : 
+                               change.type === 'added' ? 'New' : '—'}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">—</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })
                 ) : (
-                  <tr><td colSpan={4} className="px-4 py-4 text-center text-xs text-muted-foreground">No recent pricing changes.</td></tr>
+                  <tr><td colSpan={3} className="px-4 py-4 text-center text-xs text-muted-foreground">No pricing data available.</td></tr>
                 )}
               </tbody>
             </table>
