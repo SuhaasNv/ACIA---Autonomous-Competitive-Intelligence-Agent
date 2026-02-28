@@ -28,6 +28,20 @@ The platform is built around a cost-first design: HTML is scraped, parsed into s
 
 ---
 
+## Pitch Deck
+
+<img src="images/Slide%201.png" alt="Signal — Autonomous Competitive Intelligence" width="100%" />
+
+<img src="images/slide%202.png" alt="The Problem — Competitive Blindspots Are Costing You Deals" width="100%" />
+
+<img src="images/slide%203.png" alt="The Solution — On-Demand Intelligence in Seconds" width="100%" />
+
+<img src="images/slide%204.png" alt="How It Works — Production-Grade Architecture" width="100%" />
+
+<img src="images/slide%205.png" alt="Traction & Ask — Ready for Early Adopters" width="100%" />
+
+---
+
 ## Screenshots
 
 ### Landing
