@@ -18,7 +18,7 @@
 
 **A full-stack competitive intelligence platform — built from scratch by one developer.**
 
-[Demo](#-see-it-in-action) • [Quick Start](#-quick-start) • [Architecture](#-how-it-works) • [Tech Stack](#-tech-stack)
+[Demo](#-see-it-in-action) • [Quick Start](#-quick-start) • [Architecture](#-how-it-works) • [Integrations](#-integrations--use-cases) • [Tech Stack](#-tech-stack)
 
 </div>
 
@@ -40,10 +40,10 @@ Built for **SaaS founders** and **product managers** who need to stay ahead of c
 | What makes it stand out | The technical story |
 |-------------------------|---------------------|
 | **Cost-first AI design** | Gemini is called *only* when delta ≥5% — raw HTML never hits the LLM |
-| **Delta engine** | Custom diff engine compares structured JSON snapshots before waking up AI |
-| **Full-stack solo build** | React + Express + Supabase + Bright Data + Gemini — one developer, end-to-end |
+| **Delta engine** | Custom diff engine compares structured JSON snapshots (Acontext baseline) before waking up AI |
+| **Full-stack solo build** | React + Express + Supabase + Bright Data + ActionBook + Acontext + Gemini — one developer, end-to-end |
 | **Production-ready auth** | Supabase Auth, JWT middleware, protected routes, onboarding flow |
-| **Smart scraping** | Bright Data proxy with ActionBook fallback for anti-bot resilience |
+| **Smart scraping** | Bright Data (MCP → Proxy → Direct) with ActionBook agent fallback for dynamic/anti-bot pages |
 
 ---
 
@@ -67,7 +67,9 @@ Landing → Register → Add Competitor → Scan → AI-Powered Report
 - **Node.js** 18+
 - **Supabase** account (free tier works)
 - **Gemini API key** (optional — returns placeholder if missing)
-- **Bright Data** credentials (optional — falls back to direct fetch)
+- **Bright Data** MCP token or proxy credentials (optional — falls back to direct fetch)
+- **ActionBook** API key (optional — fallback when static scrape yields fewer than 2 tiers)
+- **Acontext** API key (optional — falls back to in-memory baseline)
 
 ### Run locally
 
@@ -93,36 +95,95 @@ cd server && npm run dev   # Backend → http://localhost:3001
 ## 🏗 How It Works
 
 ```
-┌─────────────┐     POST /api/scan      ┌─────────────────┐
-│   React     │ ─────────────────────► │   Express API   │
-│   (Vite)    │     + JWT Auth          │   (Node.js)     │
-└─────────────┘                         └────────┬────────┘
-                                                │
-                    ┌──────────────────────────┼──────────────────────────┐
-                    │                          │                          │
-                    ▼                          ▼                          ▼
-            ┌───────────────┐          ┌───────────────┐          ┌───────────────┐
-            │  Bright Data  │          │   Supabase    │          │    Gemini     │
-            │  (Scraping)   │          │  (DB + Auth)  │          │  (Insights)   │
-            └───────────────┘          └───────────────┘          └───────────────┘
-                    │                          │                          │
-                    └──────────────────────────┼──────────────────────────┘
-                                               │
-                                               ▼
-                                    ┌───────────────────┐
-                                    │  Delta Engine     │
-                                    │  (≥5% → Gemini)   │
-                                    └───────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│                              ACIA — Scan Architecture                                    │
+└─────────────────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────┐     POST /api/scan      ┌─────────────────────────────────────────────────┐
+│   React     │ ─────────────────────► │              Express API (Node.js)               │
+│   (Vite)    │     + JWT Auth          │                                                 │
+└─────────────┘                         └─────────────────────┬───────────────────────────┘
+                                                              │
+         ┌────────────────────────────────────────────────────┼────────────────────────────────────────────────────┐
+         │                    │                    │                    │                    │                    │
+         ▼                    ▼                    ▼                    ▼                    ▼                    ▼
+┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
+│   Bright Data   │  │   ActionBook     │  │    Acontext      │  │    Supabase     │  │     Gemini      │  │  Delta Engine    │
+│   (Primary)     │  │   (Fallback)     │  │   (Memory)       │  │  (DB + Auth)    │  │   (Insights)    │  │  (≥5% → AI)      │
+└────────┬────────┘  └────────┬─────────┘  └────────┬─────────┘  └────────┬─────────┘  └────────┬─────────┘  └────────┬─────────┘
+         │                   │                     │                     │                     │                     │
+         │  MCP / Proxy /    │  Agent navigation   │  getLatestSnapshot  │  Competitors,       │  analyzeDelta()    │  computeLocalDelta
+         │  Direct fetch     │  when <2 tiers      │  setLatestSnapshot  │  Reports, Auth      │  (conditional)     │  (JSON diff)
+         │                   │                     │                     │                     │                     │
+         └───────────────────┴─────────────────────┴─────────────────────┴─────────────────────┴─────────────────────┘
+                                                              │
+                                                              ▼
+                                              ┌───────────────────────────────┐
+                                              │  1. Bright Data fetches HTML  │
+                                              │  2. Parse → tiers/prices        │
+                                              │  3. If <2 tiers → ActionBook    │
+                                              │  4. Acontext: load baseline    │
+                                              │  5. Delta ≥5%? → Gemini        │
+                                              │  6. Save report → Supabase     │
+                                              └───────────────────────────────┘
 ```
 
 ### Scan flow
 
 1. **Trigger** — User clicks Scan → `POST /api/scan`
-2. **Fetch** — Bright Data scrapes competitor pricing URL
+2. **Fetch** — Bright Data scrapes competitor URL (MCP → Proxy → Direct fallback)
 3. **Parse** — HTML → structured JSON (tiers, prices)
-4. **Compare** — Delta engine vs. last snapshot
-5. **Conditional AI** — Gemini only if delta ≥5%
-6. **Store** — Report saved to Supabase
+4. **ActionBook fallback** — If &lt;2 tiers found, autonomous agent navigates to pricing page
+5. **Compare** — Delta engine vs. Acontext baseline snapshot
+6. **Conditional AI** — Gemini only if delta ≥5%
+7. **Store** — Report saved to Supabase, snapshot to Acontext
+
+---
+
+## 🔌 Integrations & Use Cases
+
+### Bright Data — Primary Scraping Engine
+
+**Use case:** High-volume, standard SaaS pricing pages that aren't aggressively anti-bot or highly dynamic.
+
+**How it works:**
+- **Strategy 1 (MCP):** Bright Data Model Context Protocol — connects via SSE, calls `scrape_as_html` tool for clean HTML
+- **Strategy 2 (Proxy):** Bright Data residential proxy — routes requests through proxy for anti-bot bypass
+- **Strategy 3 (Direct):** Plain axios fetch with robust headers — fallback when credentials are missing
+
+**Flow:** Tries MCP → Proxy → Direct, with retries. Returns HTML for parsing. Used first for every scan.
+
+---
+
+### ActionBook — Autonomous Web Agent (Fallback)
+
+**Use case:** Dynamic pages (React/Next), pricing behind navigation, or when static scraping yields nothing.
+
+**When it triggers:**
+- Bright Data returns HTML but parser finds &lt;2 pricing tiers
+- User provides homepage URL instead of direct pricing URL
+- Pricing is behind interaction (e.g. "Pricing" link in nav)
+
+**How it works:**
+- **`navigateToPricing()`** — Agent starts at homepage, uses goal "Find and navigate to the pricing page", clicks common selectors (`a[href*="pricing"]`, `a[href*="plans"]`, etc.), waits for pricing content
+- **`extractDynamicHtml()`** — Renders URL with `wait_for_selector` for `.pricing`, `.price`, `.tier`, etc.
+
+**Flow:** Only invoked when Bright Data + parser fail to extract sufficient tiers. Returns rendered HTML from the discovered pricing page.
+
+---
+
+### Acontext — Memory & Baseline State
+
+**Use case:** "Time machine" for delta comparison — stores the latest pricing snapshot per user so we can detect changes over time.
+
+**How it works:**
+- **`getLatestSnapshot(userId)`** — Retrieves previous scan's structured JSON (tiers, prices) before comparing
+- **`setLatestSnapshot(userId, data)`** — Overwrites memory with new scan result after processing
+- **Key format:** `competitor:{userId}:latest_snapshot`
+
+**Fallback:** If no API key, uses in-memory `Map` — works for single-instance dev, degrades gracefully.
+
+**Flow:** Called before delta computation (load baseline) and after scan completes (save new state).
 
 ---
 
@@ -133,9 +194,9 @@ cd server && npm run dev   # Backend → http://localhost:3001
 | **Frontend** | React 18, TypeScript, Vite, Tailwind CSS, shadcn/ui, Framer Motion, React Router |
 | **Backend** | Node.js, Express |
 | **Database & Auth** | Supabase (PostgreSQL, Auth) |
-| **Scraping** | Bright Data (proxy), ActionBook (fallback) |
+| **Scraping** | Bright Data (MCP, Proxy, Direct), ActionBook (agent fallback for dynamic pages) |
 | **AI** | Google Gemini 2.5 Flash |
-| **Memory** | Acontext (latest snapshot) |
+| **Memory** | Acontext (baseline snapshots for delta comparison) |
 
 ---
 
@@ -169,8 +230,10 @@ ACIA/
 | `VITE_SUPABASE_ANON_KEY` | Yes | Supabase anon key |
 | `SUPABASE_SERVICE_ROLE_KEY` | Yes | Backend admin access |
 | `GEMINI_API_KEY` | No | Returns placeholder if missing |
-| `BRIGHTDATA_*` | No | Proxy credentials (falls back to direct fetch) |
-| `ACONTEXT_*` | No | Memory layer (falls back to in-memory) |
+| `BRIGHTDATA_MCP_TOKEN` | No | Bright Data MCP token (primary scraping; falls back to proxy/direct) |
+| `BRIGHTDATA_PROXY_HOST`, `BRIGHTDATA_USERNAME`, `BRIGHTDATA_PASSWORD` | No | Bright Data proxy (fallback if MCP fails) |
+| `ACTIONBOOK_API_KEY` | No | ActionBook agent (fallback when &lt;2 tiers from static scrape) |
+| `ACONTEXT_API_KEY` | No | Acontext memory (falls back to in-memory for baseline) |
 
 See `.env.example` for the full list.
 
