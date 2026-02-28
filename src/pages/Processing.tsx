@@ -4,7 +4,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   Globe, Bot, DollarSign, GitCompare, Brain, Check, 
   Sparkles, Terminal, Zap, Search, Database, FileText, ChevronRight,
-  Shield, Target, TrendingUp, TrendingDown, Minus, AlertCircle
+  Shield, Target, TrendingUp, TrendingDown, Minus, AlertCircle,
+  WifiOff, Clock, Lock, RefreshCw, ExternalLink
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
@@ -99,6 +100,337 @@ interface ScanMeta {
   impact?: string;
 }
 
+// ─── Smart Error Classifier ────────────────────────────────────────────────
+
+type ErrorCategory = {
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  description: string;
+  hint: string;
+  color: "red" | "amber" | "blue";
+};
+
+function classifyError(message: string): ErrorCategory {
+  const m = message.toLowerCase();
+
+  if (m.includes("no competitor configured") || m.includes("no competitor")) {
+    return {
+      icon: Target,
+      title: "No competitor added yet",
+      description: "You haven't configured a competitor URL to scan.",
+      hint: "Add a competitor URL from the dashboard first.",
+      color: "blue",
+    };
+  }
+  if (m.includes("timeout") || m.includes("timed out") || m.includes("econnaborted")) {
+    return {
+      icon: Clock,
+      title: "Scan timed out",
+      description: "The competitor's page took too long to respond.",
+      hint: "Try again, or use a more direct URL (e.g. example.com/pricing).",
+      color: "amber",
+    };
+  }
+  if (
+    m.includes("enotfound") || m.includes("econnrefused") ||
+    m.includes("network") || m.includes("failed to fetch") ||
+    m.includes("all fetch strategies failed")
+  ) {
+    return {
+      icon: WifiOff,
+      title: "Unable to reach that website",
+      description: "The competitor URL isn't publicly accessible or doesn't exist.",
+      hint: "Make sure the URL is correct and the site is publicly reachable.",
+      color: "red",
+    };
+  }
+  if (m.includes("403") || m.includes("401") || m.includes("unauthorized") || m.includes("forbidden") || m.includes("access denied")) {
+    return {
+      icon: Lock,
+      title: "Access denied by competitor's website",
+      description: "This site is actively blocking automated requests.",
+      hint: "Try the direct pricing page URL or a different competitor.",
+      color: "amber",
+    };
+  }
+  if (
+    m.includes("parse") || m.includes("pricing") || m.includes("tier") ||
+    m.includes("extract") || m.includes("no pricing") || m.includes("synthetic")
+  ) {
+    return {
+      icon: AlertCircle,
+      title: "Agent unable to detect pricing structure",
+      description: "Signal couldn't find structured pricing data on this page.",
+      hint: "Try linking directly to the pricing page (e.g. example.com/pricing).",
+      color: "red",
+    };
+  }
+  if (m.includes("mcp") || m.includes("brightdata") || m.includes("actionbook") || m.includes("scraping")) {
+    return {
+      icon: RefreshCw,
+      title: "Scraping service unavailable",
+      description: "External web scraping tools are temporarily unreachable.",
+      hint: "Wait a moment and try again.",
+      color: "amber",
+    };
+  }
+
+  return {
+    icon: AlertCircle,
+    title: "Analysis failed",
+    description: "Something unexpected went wrong during the scan.",
+    hint: "Try a different competitor URL or return to the dashboard.",
+    color: "red",
+  };
+}
+
+// ─── Smart Error Screen ─────────────────────────────────────────────────────
+
+interface SmartErrorScreenProps {
+  message: string;
+}
+
+const SmartErrorScreen = ({ message }: SmartErrorScreenProps) => {
+  const navigate = useNavigate();
+  const category = classifyError(message);
+  const Icon = category.icon;
+
+  const colorMap = {
+    red: {
+      glow: "bg-destructive/10",
+      iconBg: "bg-destructive/10 border-destructive/30",
+      iconText: "text-destructive",
+      badge: "bg-destructive/10 border-destructive/20 text-destructive",
+      btn: "bg-destructive/10 border border-destructive/30 text-destructive hover:bg-destructive/20",
+    },
+    amber: {
+      glow: "bg-amber-500/10",
+      iconBg: "bg-amber-500/10 border-amber-500/30",
+      iconText: "text-amber-500",
+      badge: "bg-amber-500/10 border-amber-500/20 text-amber-500",
+      btn: "bg-amber-500/10 border border-amber-500/30 text-amber-500 hover:bg-amber-500/20",
+    },
+    blue: {
+      glow: "bg-primary/10",
+      iconBg: "bg-primary/10 border-primary/30",
+      iconText: "text-primary",
+      badge: "bg-primary/10 border-primary/20 text-primary",
+      btn: "bg-primary/10 border border-primary/30 text-primary hover:bg-primary/20",
+    },
+  }[category.color];
+
+  return (
+    <div className="min-h-screen gradient-hero flex items-center justify-center relative overflow-hidden">
+      <div className="pointer-events-none absolute inset-0 grid-bg opacity-15" />
+      <motion.div
+        className={`pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[500px] w-[500px] rounded-full blur-3xl ${colorMap.glow}`}
+      />
+
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="relative z-10 w-full max-w-md px-6"
+      >
+        {/* Icon */}
+        <div className="flex justify-center mb-6">
+          <div className={`flex h-16 w-16 items-center justify-center rounded-2xl border ${colorMap.iconBg}`}>
+            <Icon className={`h-8 w-8 ${colorMap.iconText}`} />
+          </div>
+        </div>
+
+        {/* Title & description */}
+        <div className="text-center mb-6">
+          <h2 className="text-xl font-semibold text-foreground mb-2">{category.title}</h2>
+          <p className="text-sm text-muted-foreground leading-relaxed">{category.description}</p>
+        </div>
+
+        {/* Hint card */}
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className={`flex items-start gap-3 rounded-xl border p-4 mb-6 ${colorMap.badge}`}
+        >
+          <ExternalLink className="h-4 w-4 mt-0.5 shrink-0 opacity-70" />
+          <p className="text-sm leading-relaxed">{category.hint}</p>
+        </motion.div>
+
+        {/* Raw error detail (collapsed, for devs) */}
+        <details className="mb-6 group">
+          <summary className="text-xs text-muted-foreground/50 cursor-pointer select-none hover:text-muted-foreground transition-colors">
+            Show technical details
+          </summary>
+          <p className="mt-2 text-xs text-muted-foreground/60 font-mono bg-muted/30 rounded-lg px-3 py-2 break-all">
+            {message}
+          </p>
+        </details>
+
+        {/* Actions */}
+        <div className="flex flex-col gap-3">
+          <button
+            onClick={() => navigate("/dashboard")}
+            className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Try a different competitor URL
+          </button>
+          <button
+            onClick={() => navigate("/dashboard")}
+            className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Return to Dashboard
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  );
+};
+
+// Scan Summary Card
+interface ScanSummaryCardProps {
+  scanMeta: ScanMeta;
+  scanResult: { hasSignificantChange: boolean; isFirstRun: boolean } | null;
+}
+
+const ScanSummaryCard = ({ scanMeta, scanResult }: ScanSummaryCardProps) => {
+  const tiers = scanMeta.tiersFound || 0;
+
+  const items: { icon: React.ComponentType<{ className?: string }>; label: string; sub?: string; accent?: boolean }[] = [
+    {
+      icon: Globe,
+      label: scanMeta.pricingPageUrl ? "Pricing page identified" : "Homepage analyzed",
+      sub: scanMeta.pricingPageUrl
+        ? scanMeta.pricingPageUrl.replace(/^https?:\/\//, '').split('/')[0]
+        : "Direct scan",
+    },
+    ...(scanMeta.actionBookUsed
+      ? [{
+          icon: Bot,
+          label: "Pricing page discovered autonomously",
+          sub: "ActionBook web agent navigated to pricing",
+          accent: true,
+        }]
+      : []),
+    {
+      icon: DollarSign,
+      label: `${tiers} pricing tier${tiers !== 1 ? 's' : ''} extracted`,
+      sub: `Structured pricing data captured`,
+    },
+    {
+      icon: scanResult?.isFirstRun
+        ? Database
+        : scanResult?.hasSignificantChange
+          ? TrendingUp
+          : Minus,
+      label: scanResult?.isFirstRun
+        ? "Baseline established"
+        : scanResult?.hasSignificantChange
+          ? "Strategic shift detected"
+          : "No material changes detected",
+      sub: scanMeta.classification
+        ? `Classification: ${scanMeta.classification}`
+        : undefined,
+      accent: scanResult?.hasSignificantChange && !scanResult?.isFirstRun,
+    },
+  ];
+
+  const container = {
+    hidden: {},
+    show: { transition: { staggerChildren: 0.12, delayChildren: 0.1 } },
+  };
+
+  const item = {
+    hidden: { opacity: 0, x: -12 },
+    show: { opacity: 1, x: 0, transition: { duration: 0.25 } },
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, delay: 0.1 }}
+      className="mt-4 rounded-xl border border-border/50 bg-card/80 backdrop-blur-sm overflow-hidden"
+    >
+      {/* Card Header */}
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-border/30 bg-muted/30">
+        <Sparkles className="h-3.5 w-3.5 text-primary" />
+        <span className="text-xs font-semibold text-foreground tracking-wide uppercase">Scan Summary</span>
+        <div className="flex-1" />
+        <span className="text-[10px] text-muted-foreground tabular-nums">
+          {(scanMeta.durationMs / 1000).toFixed(1)}s
+        </span>
+      </div>
+
+      {/* Items */}
+      <motion.ul
+        variants={container}
+        initial="hidden"
+        animate="show"
+        className="px-4 py-3 space-y-2.5"
+      >
+        {items.map((it, idx) => {
+          const Icon = it.icon;
+          return (
+            <motion.li key={idx} variants={item} className="flex items-start gap-3">
+              <div className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md ${
+                it.accent
+                  ? 'bg-amber-500/15 text-amber-400'
+                  : 'bg-success/15 text-success'
+              }`}>
+                <Check className="h-3 w-3" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className={`text-sm font-medium leading-snug ${
+                  it.accent ? 'text-amber-400' : 'text-foreground'
+                }`}>
+                  {it.label}
+                </p>
+                {it.sub && (
+                  <p className="text-xs text-muted-foreground mt-0.5">{it.sub}</p>
+                )}
+              </div>
+              <div className={`shrink-0 mt-0.5 flex h-5 w-5 items-center justify-center rounded-full ${
+                it.accent ? 'bg-amber-500/10' : 'bg-success/10'
+              }`}>
+                <Icon className={`h-3 w-3 ${it.accent ? 'text-amber-400' : 'text-success'}`} />
+              </div>
+            </motion.li>
+          );
+        })}
+      </motion.ul>
+
+      {/* Footer bar */}
+      <div className="flex items-center gap-4 px-4 py-2.5 border-t border-border/30 bg-muted/20">
+        {scanMeta.actionBookUsed ? (
+          <div className="flex items-center gap-1.5 text-xs text-amber-400">
+            <Bot className="h-3 w-3" />
+            <span>Agent-assisted</span>
+          </div>
+        ) : (
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Globe className="h-3 w-3" />
+            <span>Direct scan</span>
+          </div>
+        )}
+        {scanMeta.classification && (
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <span className={`h-1.5 w-1.5 rounded-full ${
+              classificationStyles[scanMeta.classification]?.dot || classificationStyles.Stable.dot
+            }`} />
+            <span>{scanMeta.classification}</span>
+          </div>
+        )}
+        <div className="flex-1" />
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <Zap className="h-3 w-3" />
+          <span>{tiers} tier{tiers !== 1 ? 's' : ''}</span>
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
 // Main stage definitions for the progress indicator
 const mainStages = [
   { id: "fetch", label: "Fetching", icon: Globe },
@@ -113,6 +445,7 @@ const Processing = () => {
   const [currentStageIndex, setCurrentStageIndex] = useState(0);
   const [scanComplete, setScanComplete] = useState(false);
   const [scanMeta, setScanMeta] = useState<ScanMeta | null>(null);
+  const [scanResult, setScanResult] = useState<{ hasSignificantChange: boolean; isFirstRun: boolean } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [fatalError, setFatalError] = useState<string | null>(null);
   const [showAgentMode, setShowAgentMode] = useState(false);
@@ -223,6 +556,10 @@ const Processing = () => {
           
           if (meta) {
             setScanMeta(meta);
+            setScanResult({
+              hasSignificantChange: res?.hasSignificantChange ?? false,
+              isFirstRun: res?.isFirstRun ?? false,
+            });
             
             // Check if agent was used
             if (meta.actionBookUsed) {
@@ -287,7 +624,6 @@ const Processing = () => {
           if (simInterval) clearInterval(simInterval);
           if (stageInterval) clearInterval(stageInterval);
           setError(err.message || "Scan failure");
-          toast.error(err.message || "Failed to scan competitor");
         }
       }
     };
@@ -309,6 +645,10 @@ const Processing = () => {
   // Get filtered stages based on agent mode
   const activeStages = mainStages.filter(s => !s.conditional || showAgentMode);
 
+  // Early returns for error states — must be before the main return
+  if (fatalError) return <SmartErrorScreen message={fatalError} />;
+  if (error) return <SmartErrorScreen message={error} />;
+
   return (
     <div className="min-h-screen gradient-hero flex items-center justify-center relative overflow-hidden">
       <div className="pointer-events-none absolute inset-0 grid-bg opacity-15" />
@@ -342,7 +682,7 @@ const Processing = () => {
               >
                 <Bot className="h-4 w-4 text-amber-500 animate-pulse" />
                 <span className="text-xs font-semibold text-amber-500 tracking-wide">
-                  AUTONOMOUS WEB AGENT ACTIVE
+                  AUTONOMOUS COMPETITIVE ANALYST ACTIVATED
                 </span>
               </motion.div>
             ) : (
@@ -355,7 +695,7 @@ const Processing = () => {
               >
                 <Sparkles className="h-4 w-4 text-primary" />
                 <span className="text-xs font-semibold text-primary tracking-wide">
-                  INTELLIGENT SCAN
+                  AUTONOMOUS COMPETITIVE ANALYST ACTIVATED
                 </span>
               </motion.div>
             )}
@@ -379,7 +719,7 @@ const Processing = () => {
         </div>
 
         {/* Stage Progress Indicator */}
-        {!error && (
+        {(
           <div className="flex items-center justify-center gap-2 mb-6">
             {activeStages.map((stage, idx) => {
               const StageIcon = stage.icon;
@@ -422,7 +762,7 @@ const Processing = () => {
         )}
 
         {/* Agent Thought Trace Panel */}
-        {!error && (
+        {(
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -536,389 +876,14 @@ const Processing = () => {
           </motion.div>
         )}
 
-        {/* Intelligence Summary */}
+        {/* Scan Summary Card */}
         {scanMeta && scanComplete && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-4 space-y-3"
-          >
-            {/* Strategic Badge */}
-            <div className="flex items-center justify-center gap-4">
-              {scanMeta.classification && (
-                <div className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium">
-                  <span className={`h-1.5 w-1.5 rounded-full ${
-                    classificationStyles[scanMeta.classification]?.dot || classificationStyles.Stable.dot
-                  }`} />
-                  {scanMeta.classification}
-                </div>
-              )}
-              
-              {scanMeta.confidence != null && (
-                <div className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium">
-                  <Shield className="h-3 w-3 text-muted-foreground" />
-                  {scanMeta.confidence}% confidence
-                </div>
-              )}
-              
-              {scanMeta.impact && (
-                <div className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium">
-                  <Target className="h-3 w-3 text-muted-foreground" />
-                  {scanMeta.impact} impact
-                </div>
-              )}
-            </div>
-            
-            {/* Summary Stats */}
-            <div className="flex items-center justify-center gap-6 text-xs text-muted-foreground">
-              <div className="flex items-center gap-1.5">
-                <DollarSign className="h-3.5 w-3.5" />
-                <span>{scanMeta.tiersFound || 0} tier{(scanMeta.tiersFound || 0) !== 1 ? 's' : ''}</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                {scanMeta.actionBookUsed ? (
-                  <>
-                    <Bot className="h-3.5 w-3.5 text-amber-500" />
-                    <span className="text-amber-500">Agent-assisted</span>
-                  </>
-                ) : (
-                  <>
-                    <Globe className="h-3.5 w-3.5" />
-                    <span>Direct scan</span>
-                  </>
-                )}
-              </div>
-              <div className="flex items-center gap-1.5">
-                <Zap className="h-3.5 w-3.5" />
-                <span>{(scanMeta.durationMs / 1000).toFixed(1)}s</span>
-              </div>
-            </div>
-          </motion.div>
+          <ScanSummaryCard scanMeta={scanMeta} scanResult={scanResult} />
         )}
       </motion.div>
     </div>
   );
 
-  // Render fatal error state if present
-  if (fatalError) {
-    return (
-      <div className="min-h-screen gradient-hero flex items-center justify-center relative overflow-hidden">
-        <div className="pointer-events-none absolute inset-0 grid-bg opacity-15" />
-        <motion.div 
-          className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[500px] w-[500px] rounded-full blur-3xl bg-destructive/10"
-        />
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="relative z-10 w-full max-w-md px-6 text-center"
-        >
-          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-destructive/10 border border-destructive/30">
-            <AlertCircle className="h-8 w-8 text-destructive" />
-          </div>
-          <h2 className="text-xl font-semibold text-foreground mb-2">Something went wrong</h2>
-          <p className="text-sm text-muted-foreground mb-6">
-            {fatalError}
-          </p>
-          <button 
-            onClick={() => navigate("/dashboard")}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
-          >
-            Return to Dashboard
-          </button>
-        </motion.div>
-      </div>
-    );
-  }
-  
-  return (
-    <div className="min-h-screen gradient-hero flex items-center justify-center relative overflow-hidden">
-      <div className="pointer-events-none absolute inset-0 grid-bg opacity-15" />
-
-      {/* Animated background glow */}
-      <motion.div 
-        className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[500px] w-[500px] rounded-full blur-3xl"
-        animate={{
-          background: showAgentMode 
-            ? ['rgba(245, 158, 11, 0.1)', 'rgba(245, 158, 11, 0.15)', 'rgba(245, 158, 11, 0.1)']
-            : ['rgba(59, 130, 246, 0.1)', 'rgba(59, 130, 246, 0.15)', 'rgba(59, 130, 246, 0.1)']
-        }}
-        transition={{ duration: 2, repeat: Infinity }}
-      />
-
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="relative z-10 w-full max-w-2xl px-6"
-      >
-        {/* Header with Agent Mode indicator */}
-        <div className="text-center mb-6">
-          <AnimatePresence mode="wait">
-            {showAgentMode ? (
-              <motion.div
-                key="agent-active"
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.9, opacity: 0 }}
-                className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 mb-4"
-              >
-                <Bot className="h-4 w-4 text-amber-500 animate-pulse" />
-                <span className="text-xs font-semibold text-amber-500 tracking-wide">
-                  AUTONOMOUS WEB AGENT ACTIVE
-                </span>
-              </motion.div>
-            ) : (
-              <motion.div
-                key="scan-active"
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.9, opacity: 0 }}
-                className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/30 mb-4"
-              >
-                <Sparkles className="h-4 w-4 text-primary" />
-                <span className="text-xs font-semibold text-primary tracking-wide">
-                  INTELLIGENT SCAN
-                </span>
-              </motion.div>
-            )}
-          </AnimatePresence>
-          
-          <h2 className="text-2xl font-semibold text-foreground">
-            {error ? "Analysis Failed" : scanComplete ? "Analysis Complete" : "Analyzing Competitor"}
-          </h2>
-          
-          {error && (
-            <div className="mt-4">
-              <p className="text-sm text-destructive mb-3">{error}</p>
-              <button 
-                onClick={() => navigate("/dashboard")} 
-                className="text-xs font-medium text-primary hover:underline"
-              >
-                Return to Dashboard →
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Stage Progress Indicator */}
-        {!error && (
-          <div className="flex items-center justify-center gap-2 mb-6">
-            {activeStages.map((stage, idx) => {
-              const StageIcon = stage.icon;
-              const isActive = idx === currentStageIndex && !scanComplete;
-              const isComplete = idx < currentStageIndex || scanComplete;
-              const isAgentStage = stage.id === 'agent';
-              
-              return (
-                <div key={stage.id} className="flex items-center">
-                  <motion.div
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-300 ${
-                      isComplete
-                        ? "bg-success/20 text-success"
-                        : isActive
-                          ? isAgentStage
-                            ? "bg-amber-500/20 text-amber-500 shadow-lg shadow-amber-500/20"
-                            : "bg-primary/20 text-primary shadow-lg shadow-primary/20"
-                          : "bg-muted/30 text-muted-foreground"
-                    }`}
-                    animate={isActive ? { scale: [1, 1.05, 1] } : {}}
-                    transition={{ repeat: Infinity, duration: 1.5 }}
-                  >
-                    {isComplete ? (
-                      <Check className="h-3 w-3" />
-                    ) : (
-                      <StageIcon className={`h-3 w-3 ${isActive ? 'animate-pulse' : ''}`} />
-                    )}
-                    <span className="hidden sm:inline">{stage.label}</span>
-                  </motion.div>
-                  
-                  {idx < activeStages.length - 1 && (
-                    <ChevronRight className={`h-4 w-4 mx-1 ${
-                      idx < currentStageIndex ? 'text-success' : 'text-muted-foreground/30'
-                    }`} />
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Agent Thought Trace Panel */}
-        {!error && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="rounded-xl border border-border/50 bg-card/80 backdrop-blur-sm overflow-hidden"
-          >
-            {/* Panel Header */}
-            <div className="flex items-center gap-2 px-4 py-3 border-b border-border/30 bg-muted/30">
-              <Terminal className="h-4 w-4 text-muted-foreground" />
-              <span className="text-xs font-medium text-muted-foreground">Agent Thought Trace</span>
-              <div className="flex-1" />
-              {!scanComplete && (
-                <motion.div
-                  className="h-2 w-2 rounded-full bg-primary"
-                  animate={{ opacity: [1, 0.3, 1] }}
-                  transition={{ repeat: Infinity, duration: 1 }}
-                />
-              )}
-            </div>
-
-            {/* Steps Container */}
-            <div 
-              ref={stepsContainerRef}
-              className="h-[280px] overflow-y-auto p-4 space-y-2 scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
-            >
-              <AnimatePresence mode="popLayout">
-                {Array.isArray(visibleSteps) && visibleSteps.map((step, idx) => {
-                  try {
-                    const StepIcon = stepIcons[step.type] || Zap;
-                    const isAgentStep = ['agent', 'navigate', 'discover'].includes(step.type);
-                    const isErrorStep = ['error', 'warn'].includes(step.type);
-                    const isCompleteStep = step.type === 'complete';
-                    
-                    return (
-                      <motion.div
-                        key={`${step.type}-${idx}`}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.2 }}
-                        className={`flex items-start gap-3 px-3 py-2 rounded-lg ${
-                          isCompleteStep
-                            ? 'bg-success/10 border border-success/20'
-                            : isErrorStep
-                              ? 'bg-destructive/10 border border-destructive/20'
-                              : isAgentStep
-                                ? 'bg-amber-500/10 border border-amber-500/20'
-                                : 'bg-muted/30'
-                        }`}
-                      >
-                        <div className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md ${
-                          isCompleteStep
-                            ? 'bg-success/20 text-success'
-                            : isErrorStep
-                              ? 'bg-destructive/20 text-destructive'
-                              : isAgentStep
-                                ? 'bg-amber-500/20 text-amber-500'
-                                : 'bg-primary/20 text-primary'
-                        }`}>
-                          <StepIcon className="h-3.5 w-3.5" />
-                        </div>
-                        
-                        <div className="flex-1 min-w-0">
-                          <p className={`text-sm font-medium ${
-                            isCompleteStep
-                              ? 'text-success'
-                              : isErrorStep
-                                ? 'text-destructive'
-                                : isAgentStep
-                                  ? 'text-amber-500'
-                                  : 'text-foreground'
-                          }`}>
-                            {step.message}
-                          </p>
-                          {step.detail && (
-                            <p className="text-xs text-muted-foreground mt-0.5 truncate">
-                              {step.detail}
-                            </p>
-                          )}
-                        </div>
-                        
-                        <span className="text-[10px] text-muted-foreground/60 tabular-nums shrink-0">
-                          {(step.timestamp / 1000).toFixed(1)}s
-                        </span>
-                      </motion.div>
-                    );
-                  } catch (renderError) {
-                    console.error('Error rendering step:', renderError);
-                    return null;
-                  }
-                })}
-              </AnimatePresence>
-              
-              {/* Waiting indicator */}
-              {!scanComplete && Array.isArray(visibleSteps) && visibleSteps.length > 0 && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="flex items-center gap-2 px-3 py-2 text-muted-foreground"
-                >
-                  <motion.div
-                    className="flex gap-1"
-                    animate={{ opacity: [0.3, 1, 0.3] }}
-                    transition={{ repeat: Infinity, duration: 1.5 }}
-                  >
-                    <span className="h-1.5 w-1.5 rounded-full bg-current" />
-                    <span className="h-1.5 w-1.5 rounded-full bg-current" />
-                    <span className="h-1.5 w-1.5 rounded-full bg-current" />
-                  </motion.div>
-                </motion.div>
-              )}
-            </div>
-          </motion.div>
-        )}
-
-        {/* Intelligence Summary */}
-        {scanMeta && scanComplete && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-4 space-y-3"
-          >
-            {/* Strategic Badge */}
-            <div className="flex items-center justify-center gap-4">
-              {scanMeta.classification && (
-                <div className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium">
-                  <span className={`h-1.5 w-1.5 rounded-full ${
-                    classificationStyles[scanMeta.classification]?.dot || classificationStyles.Stable.dot
-                  }`} />
-                  {scanMeta.classification}
-                </div>
-              )}
-              
-              {scanMeta.confidence != null && (
-                <div className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium">
-                  <Shield className="h-3 w-3 text-muted-foreground" />
-                  {scanMeta.confidence}% confidence
-                </div>
-              )}
-              
-              {scanMeta.impact && (
-                <div className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium">
-                  <Target className="h-3 w-3 text-muted-foreground" />
-                  {scanMeta.impact} impact
-                </div>
-              )}
-            </div>
-            
-            {/* Summary Stats */}
-            <div className="flex items-center justify-center gap-6 text-xs text-muted-foreground">
-              <div className="flex items-center gap-1.5">
-                <DollarSign className="h-3.5 w-3.5" />
-                <span>{scanMeta.tiersFound || 0} tier{(scanMeta.tiersFound || 0) !== 1 ? 's' : ''}</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                {scanMeta.actionBookUsed ? (
-                  <>
-                    <Bot className="h-3.5 w-3.5 text-amber-500" />
-                    <span className="text-amber-500">Agent-assisted</span>
-                  </>
-                ) : (
-                  <>
-                    <Globe className="h-3.5 w-3.5" />
-                    <span>Direct scan</span>
-                  </>
-                )}
-              </div>
-              <div className="flex items-center gap-1.5">
-                <Zap className="h-3.5 w-3.5" />
-                <span>{(scanMeta.durationMs / 1000).toFixed(1)}s</span>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </motion.div>
-    </div>
-  );
 };
 
 export default Processing;
