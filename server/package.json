@@ -1,0 +1,22 @@
+{
+    "name": "acia-backend",
+    "version": "1.0.0",
+    "description": "Signal - Autonomous Competitive Intelligence Agent Backend",
+    "main": "server.js",
+    "scripts": {
+        "start": "node server.js",
+        "dev": "node --watch server.js"
+    },
+    "dependencies": {
+        "@google/generative-ai": "^0.2.1",
+        "@modelcontextprotocol/sdk": "^1.27.1",
+        "@supabase/supabase-js": "^2.39.8",
+        "axios": "^1.13.6",
+        "cheerio": "^1.0.0-rc.12",
+        "cors": "^2.8.5",
+        "dotenv": "^16.4.5",
+        "eventsource": "^4.1.0",
+        "express": "^4.19.2",
+        "pg": "^8.19.0"
+    }
+}
