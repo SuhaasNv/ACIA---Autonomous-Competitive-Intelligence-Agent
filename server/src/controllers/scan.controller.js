@@ -61,6 +61,18 @@ async function runScan(req, res, next) {
         generatingInsight: { status: 'pending', startTime: null, endTime: null }
     };
 
+    // Detailed steps for agent thought trace (visible in frontend)
+    const agentSteps = [];
+    const addStep = (type, message, detail = null) => {
+        agentSteps.push({ 
+            type, 
+            message, 
+            detail,
+            timestamp: Date.now() - scanStart 
+        });
+        console.log(`[Scan] [Step] ${message}${detail ? ` (${detail})` : ''}`);
+    };
+
     try {
         const userId = req.user.id;
         console.log(`[Scan] ========================================`);
@@ -78,6 +90,8 @@ async function runScan(req, res, next) {
         console.log(`[Scan] 🎯 Target: ${competitor.name}`);
         console.log(`[Scan] 🔗 Provided URL: ${providedUrl}`);
 
+        addStep('init', 'Initializing scan', competitor.name);
+
         // ============================================================
         // STAGE 1: Smart URL Detection & Fetching
         // ============================================================
@@ -92,22 +106,21 @@ async function runScan(req, res, next) {
 
         // Build list of URLs to try
         if (isPricingPage(providedUrl)) {
-            // If URL already looks like a pricing page, try it first
             urlsToTry.push({ url: providedUrl, label: 'provided pricing URL' });
+            addStep('detect', 'URL identified as pricing page', providedUrl);
         } else {
-            // Try constructed pricing URL first, then homepage
             const pricingUrl = getPricingPageUrl(providedUrl);
             if (pricingUrl && pricingUrl !== providedUrl) {
                 urlsToTry.push({ url: pricingUrl, label: 'auto-detected pricing page' });
+                addStep('detect', 'Auto-detected pricing page URL', pricingUrl);
             }
             urlsToTry.push({ url: providedUrl, label: 'homepage' });
+            addStep('fetch', 'Fetching homepage', providedUrl);
         }
 
         console.log(`\n[Scan] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
         console.log(`[Scan] 📡 STAGE 1: Smart URL Fetching`);
         console.log(`[Scan] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
-        console.log(`[Scan] 📋 Will try ${urlsToTry.length} URL(s):`);
-        urlsToTry.forEach((u, i) => console.log(`[Scan]    ${i + 1}. ${u.label}: ${u.url}`));
 
         // Try each URL until we get good pricing data
         for (const { url, label } of urlsToTry) {
@@ -115,7 +128,9 @@ async function runScan(req, res, next) {
             
             try {
                 fetchedHtml = await brightData.fetchCompetitorPage(url);
-                console.log(`[Scan] ✅ Fetched ${fetchedHtml?.length || 0} bytes from ${label}`);
+                const bytes = fetchedHtml?.length || 0;
+                console.log(`[Scan] ✅ Fetched ${bytes} bytes from ${label}`);
+                addStep('loaded', `Page loaded successfully`, `${(bytes / 1024).toFixed(1)}KB`);
                 
                 // Parse pricing
                 console.log(`[Scan] 🔍 Parsing pricing from HTML...`);
@@ -128,15 +143,19 @@ async function runScan(req, res, next) {
                     newSnapshot = parsed;
                     pricingPageUrl = url;
                     dataSource = 'brightdata';
+                    addStep('extract', `Extracted ${tierCount} pricing tiers`, parsed.pricing.map(p => p.tier).join(', '));
                     console.log(`[Scan] ✅ SUCCESS: Good pricing data found!`);
                     break;
                 } else if (tierCount > 0 && newSnapshot.pricing.length === 0) {
-                    // Keep partial results in case we don't find better
                     newSnapshot = parsed;
                     pricingPageUrl = url;
+                    addStep('partial', `Found ${tierCount} tier(s), searching for more...`);
+                } else {
+                    addStep('search', 'No pricing found on this page, continuing search...');
                 }
             } catch (fetchError) {
                 console.warn(`[Scan] ⚠️ Failed to fetch ${label}: ${fetchError.message}`);
+                addStep('error', `Failed to fetch ${label}`, fetchError.message);
             }
         }
         
@@ -161,6 +180,9 @@ async function runScan(req, res, next) {
             console.log(`[Scan] 📋 Reason: Found ${tiersFound} tier(s), need at least ${MIN_TIERS_THRESHOLD}`);
             console.log(`[Scan] 🧭 Agent autonomously navigating to find pricing page...`);
             
+            addStep('agent', '🤖 Activating autonomous web agent');
+            addStep('navigate', 'Agent navigating to find pricing page...', providedUrl);
+            
             try {
                 const navResult = await actionBook.navigateToPricing(providedUrl);
                 
@@ -169,23 +191,28 @@ async function runScan(req, res, next) {
                     console.log(`[Scan] ✅ Agent found pricing page: ${pricingPageUrl}`);
                     console.log(`[Scan] 📄 Retrieved ${navResult.html.length} bytes`);
                     
+                    addStep('discover', `Pricing page discovered`, pricingPageUrl);
+                    
                     // Re-parse pricing from the pricing page
                     console.log(`[Scan] 🔍 Re-parsing pricing from pricing page...`);
                     newSnapshot = parser.parsePricingFromHtml(navResult.html);
                     
                     if (newSnapshot.pricing && newSnapshot.pricing.length > 0) {
                         dataSource = 'actionbook-navigation';
+                        addStep('extract', `Extracted ${newSnapshot.pricing.length} pricing tiers`, newSnapshot.pricing.map(p => p.tier).join(', '));
                         console.log(`[Scan] ✅ SUCCESS: Found ${newSnapshot.pricing.length} tier(s) after navigation`);
                         newSnapshot.pricing.forEach((tier, idx) => {
                             console.log(`[Scan]    ${idx + 1}. ${tier.tier}: $${tier.price}`);
                         });
                     } else {
                         console.log(`[Scan] ⚠️ Pricing page found but no tiers extracted`);
+                        addStep('warn', 'Pricing page found but parsing failed');
                     }
                     
                     stages.agentNavigating.status = 'complete';
                 } else {
                     console.log(`[Scan] ⚠️ Agent navigation did not return pricing page`);
+                    addStep('warn', 'Agent could not locate pricing page');
                     stages.agentNavigating.status = 'error';
                 }
                 
@@ -193,6 +220,7 @@ async function runScan(req, res, next) {
                 
             } catch (navError) {
                 console.warn(`[Scan] ❌ Agent navigation failed: ${navError.message}`);
+                addStep('error', 'Agent navigation failed', navError.message);
                 stages.agentNavigating.status = 'error';
                 stages.agentNavigating.endTime = Date.now();
             }
@@ -215,6 +243,7 @@ async function runScan(req, res, next) {
         if (!newSnapshot.pricing || newSnapshot.pricing.length === 0) {
             dataSource = 'synthetic';
             console.warn(`[Scan] ⚠️ FALLBACK: All methods failed - using synthetic demo data`);
+            addStep('fallback', 'Using synthetic demo data');
             newSnapshot = {
                 pricing: [
                     { tier: "Starter", price: 29.99 },
@@ -229,6 +258,10 @@ async function runScan(req, res, next) {
             console.log(`[Scan]    ${idx + 1}. ${tier.tier}: $${tier.price}`);
         });
         
+        // Add pricing summary step
+        const pricesSummary = newSnapshot.pricing.map(p => `${p.tier}: $${p.price}`).join(', ');
+        addStep('pricing', `Final pricing: ${newSnapshot.pricing.length} tiers`, pricesSummary);
+        
         stages.extractingPricing.status = 'complete';
         stages.extractingPricing.endTime = Date.now();
 
@@ -242,22 +275,38 @@ async function runScan(req, res, next) {
         console.log(`[Scan] 🔄 STAGE 4: Computing Delta (Acontext Snapshot)`);
         console.log(`[Scan] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
 
+        addStep('compare', 'Comparing against baseline snapshot');
+
         // Retrieve previous state from Acontext
         console.log(`[Scan] 📥 Retrieving previous snapshot from Acontext...`);
         const oldSnapshot = await acontext.getLatestSnapshot(userId);
         
         if (oldSnapshot) {
             console.log(`[Scan] 📋 Previous snapshot found with ${oldSnapshot.pricing?.length || 0} tier(s)`);
+            addStep('baseline', 'Previous baseline loaded', `${oldSnapshot.pricing?.length || 0} tiers`);
         } else {
             console.log(`[Scan] 📋 No previous snapshot - this is first run`);
+            addStep('baseline', 'No previous baseline - establishing first snapshot');
         }
 
         // Compute strict local diff
-        const { isFirstRun, hasSignificantChange, delta } = diffEngine.computeLocalDelta(oldSnapshot, newSnapshot);
+        const { isFirstRun, hasSignificantChange, delta, classification: deltaClassification, confidence: deltaConfidence, impact: deltaImpact } = diffEngine.computeLocalDelta(oldSnapshot, newSnapshot);
         
         console.log(`[Scan] 📊 Delta Result:`);
         console.log(`[Scan]    - First Run: ${isFirstRun}`);
         console.log(`[Scan]    - Significant Change (≥5%): ${hasSignificantChange}`);
+        console.log(`[Scan]    - Classification: ${deltaClassification}`);
+        console.log(`[Scan]    - Confidence: ${deltaConfidence}%`);
+        console.log(`[Scan]    - Impact: ${deltaImpact}`);
+        
+        if (hasSignificantChange) {
+            const changeCount = delta?.changes?.length || 0;
+            addStep('delta', `Detected ${changeCount} significant change(s)`, '≥5% threshold');
+        } else if (isFirstRun) {
+            addStep('delta', 'First run - baseline established');
+        } else {
+            addStep('delta', 'No significant changes detected', '<5% threshold');
+        }
         
         if (delta && hasSignificantChange) {
             console.log(`[Scan]    - Changes detected: ${JSON.stringify(delta)}`);
@@ -276,18 +325,34 @@ async function runScan(req, res, next) {
         console.log(`[Scan] 🧠 STAGE 5: Generating Strategic Insight`);
         console.log(`[Scan] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
 
-        let llmInsight = { insight: "No material changes detected.", classification: "Stable" };
+        let llmInsight = { 
+            insight: "No material changes detected.", 
+            classification: deltaClassification,
+            confidence: deltaConfidence,
+            impact: deltaImpact
+        };
 
         if (hasSignificantChange) {
             console.log(`[Scan] 🔥 Significant change detected - calling Gemini for analysis...`);
+            addStep('ai', 'Generating AI strategic insight...');
             llmInsight = await gemini.analyzeDelta(delta);
+            addStep('insight', `Classification: ${llmInsight.classification}`);
             console.log(`[Scan] ✅ Gemini analysis complete`);
             console.log(`[Scan]    - Classification: ${llmInsight.classification}`);
+            console.log(`[Scan]    - Confidence: ${llmInsight.confidence}%`);
+            console.log(`[Scan]    - Impact: ${llmInsight.impact}`);
         } else if (isFirstRun) {
             console.log(`[Scan] 📌 First run - establishing baseline (skipping Gemini)`);
-            llmInsight = { insight: "Initial baseline established.", classification: "Stable" };
+            addStep('insight', 'Initial baseline established', `Classification: ${deltaClassification}`);
+            llmInsight = { 
+                insight: "Initial baseline established.", 
+                classification: deltaClassification,
+                confidence: deltaConfidence,
+                impact: deltaImpact
+            };
         } else {
             console.log(`[Scan] ⏭️  No significant changes - skipping Gemini analysis`);
+            addStep('insight', 'No material changes', `Classification: ${deltaClassification}`);
         }
         
         stages.generatingInsight.status = 'complete';
@@ -299,6 +364,8 @@ async function runScan(req, res, next) {
         console.log(`\n[Scan] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
         console.log(`[Scan] 💾 STAGE 6: Storing Snapshot & Saving Report`);
         console.log(`[Scan] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+
+        addStep('save', 'Saving report to database');
 
         // Store new snapshot to Acontext
         console.log(`[Scan] 📤 Storing snapshot to Acontext...`);
@@ -316,6 +383,8 @@ async function runScan(req, res, next) {
         await supabaseService.saveReport(finalReport);
         console.log(`[Scan] ✅ Report saved successfully`);
 
+        addStep('complete', 'Analysis complete');
+
         // ============================================================
         // Complete
         // ============================================================
@@ -330,8 +399,9 @@ async function runScan(req, res, next) {
         console.log(`[Scan]    - Pricing Page URL: ${pricingPageUrl || 'N/A (homepage)'}`);
         console.log(`[Scan]    - Tiers Found: ${newSnapshot.pricing.length}`);
         console.log(`[Scan]    - Classification: ${llmInsight.classification}`);
+        console.log(`[Scan]    - Total Steps: ${agentSteps.length}`);
 
-        // Return response with stage info for frontend
+        // Return response with stage info and steps for frontend
         return res.status(200).json({
             isFirstRun,
             hasSignificantChange,
@@ -352,7 +422,9 @@ async function runScan(req, res, next) {
                     extractingPricing: stages.extractingPricing.status === 'complete',
                     computingDelta: stages.computingDelta.status === 'complete',
                     generatingInsight: stages.generatingInsight.status === 'complete'
-                }
+                },
+                // Detailed agent thought trace steps
+                steps: agentSteps
             }
         });
 

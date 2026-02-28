@@ -3,7 +3,7 @@ import { ArrowUpRight, ArrowDownRight, Minus, AlertTriangle, Shield, TrendingUp,
 import { Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import AddCompetitorModal from "@/components/AddCompetitorModal";
 import EditCompetitorModal from "@/components/EditCompetitorModal";
 import { toast } from "sonner";
@@ -49,14 +49,18 @@ const DashboardTab = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
+  const [isCooldown, setIsCooldown] = useState(false);
+  const [cooldownSeconds, setCooldownSeconds] = useState(5);
 
+  // Query for competitor data
   const { data: compRes, isLoading: isCompLoading, error: compError, refetch: refetchComp } = useQuery({
     queryKey: ['competitor'],
     queryFn: () => api.getCompetitor(),
     retry: false
   });
 
-  const { data: repRes, isLoading: isRepLoading } = useQuery({
+  // Query for latest report
+  const { data: repRes, isLoading: isRepLoading, refetch: refetchReport } = useQuery({
     queryKey: ['latestReport'],
     queryFn: () => api.getLatestReport(),
     enabled: !!compRes?.data,
@@ -66,8 +70,57 @@ const DashboardTab = () => {
   const competitor = compRes?.data;
   const report = repRes?.data;
 
+  // Cooldown timer effect
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (isCooldown && cooldownSeconds > 0) {
+      timer = setTimeout(() => {
+        setCooldownSeconds(prev => prev - 1);
+      }, 1000);
+    } else if (isCooldown && cooldownSeconds === 0) {
+      setIsCooldown(false);
+      setCooldownSeconds(5);
+    }
+    
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [isCooldown, cooldownSeconds]);
+
+  // Format relative time
+  const formatRelativeTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+    
+    if (diffInSeconds < 60) {
+      return `${diffInSeconds} seconds ago`;
+    } else if (diffInSeconds < 3600) {
+      const minutes = Math.floor(diffInSeconds / 60);
+      return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+    } else if (diffInSeconds < 86400) {
+      const hours = Math.floor(diffInSeconds / 3600);
+      return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+    } else {
+      const days = Math.floor(diffInSeconds / 86400);
+      return `${days} day${days > 1 ? 's' : ''} ago`;
+    }
+  };
+
   const handleScan = () => {
+    if (isCooldown) return;
+    
     setIsScanning(true);
+    setIsCooldown(true);
+    setCooldownSeconds(5);
+    
+    // Reset cooldown after 5 seconds even if navigation doesn't complete
+    setTimeout(() => {
+      setIsScanning(false);
+      setIsCooldown(false);
+      setCooldownSeconds(5);
+    }, 5000);
+    
     navigate("/processing");
   };
 
@@ -116,7 +169,7 @@ const DashboardTab = () => {
         </div>
         <h2 className="text-xl font-semibold text-foreground">No Competitor Configured</h2>
         <p className="text-sm text-muted-foreground mt-2 max-w-sm text-center">
-          Start monitoring a competitor’s pricing changes.
+          Start monitoring a competitor's pricing changes.
         </p>
         <button
           onClick={() => setModalOpen(true)}
@@ -137,6 +190,8 @@ const DashboardTab = () => {
   // Format miniPricing based on latest report delta
   const isSetup = !!report;
   const hasChanges = isSetup && report.delta?.changes?.length > 0;
+  const isFirstRun = report?.isFirstRun;
+  
   return (
     <div className="p-6 lg:p-8 max-w-6xl mx-auto space-y-6">
       {/* Header */}
@@ -147,21 +202,34 @@ const DashboardTab = () => {
         </div>
         <button
           onClick={handleScan}
-          disabled={isScanning}
-          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-all hover:bg-primary/90 glow-primary disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={isScanning || isCooldown}
+          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-all hover:bg-primary/90 glow-primary disabled:opacity-50 disabled:cursor-not-allowed relative"
         >
           {isScanning ? (
             <div className="h-4 w-4 rounded-full border-2 border-primary-foreground border-t-transparent animate-spin" />
           ) : (
             <Play className="h-4 w-4 fill-current" />
           )}
-          {isScanning ? "Processing..." : "Scan Now"}
+          {isScanning ? "Processing..." : isCooldown ? `Scanning in ${cooldownSeconds}s` : "Scan Now"}
         </button>
       </div>
 
-      {/* Alert banner */}
+      {/* Alert banners */}
       <AnimatePresence>
-        {!isSetup && (
+        {isFirstRun && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex items-center gap-3 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3"
+          >
+            <AlertCircle className="h-4 w-4 text-primary shrink-0 animate-pulse" />
+            <p className="text-sm text-foreground">
+              <span className="font-medium">Baseline snapshot established.</span>
+              <span className="text-muted-foreground"> — Future scans will detect strategic shifts.</span>
+            </p>
+          </motion.div>
+        )}
+        {!isSetup && !isFirstRun && (
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -223,8 +291,11 @@ const DashboardTab = () => {
                 {riskLevel}
               </span>
             </div>
+            <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
+              <span>URL: {competitor.url}</span>
+            </div>
             <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <span>Last: {report ? new Date(report.last_scan_time).toLocaleDateString() : 'Never'}</span>
+              <span>Last: {report ? formatRelativeTime(report.last_scan_time) : 'Never'}</span>
               <span className={`font-medium ${hasChanges ? "text-warning" : "text-muted-foreground"}`}>
                 {report ? (hasChanges ? 'Delta Active' : 'Stable') : 'Pending'}
               </span>
@@ -308,6 +379,13 @@ const DashboardTab = () => {
           </div>
         </div>
       </div>
+
+      {/* Footer */}
+      <footer className="pt-6 border-t border-border/30">
+        <p className="text-xs text-center text-muted-foreground">
+          Powered by Bright Data + ActionBook + Acontext
+        </p>
+      </footer>
 
       <EditCompetitorModal
         open={editModalOpen}

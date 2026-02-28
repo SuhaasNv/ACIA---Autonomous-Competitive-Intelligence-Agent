@@ -53,7 +53,8 @@ async function createCompetitor(userId, name, url) {
 }
 
 async function getLatestReport(userId) {
-    const { data, error } = await supabaseAdmin
+    // First get the latest report
+    const { data: latestReport, error: latestError } = await supabaseAdmin
         .from('reports')
         .select(`
             *,
@@ -64,12 +65,31 @@ async function getLatestReport(userId) {
         .limit(1)
         .single();
 
-    if (error && error.code !== 'PGRST116') {
-        console.error('[Supabase Error] getLatestReport:', error);
+    if (latestError && latestError.code !== 'PGRST116') {
+        console.error('[Supabase Error] getLatestReport:', latestError);
         throw new Error('Failed to fetch latest report');
     }
 
-    return data;
+    if (!latestReport) {
+        return null;
+    }
+
+    // Check if this is the first report for the competitor by counting total reports
+    const { count, error: countError } = await supabaseAdmin
+        .from('reports')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId);
+
+    if (countError) {
+        console.error('[Supabase Error] getLatestReport count:', countError);
+        // If count fails, just return the report without isFirstRun
+        return latestReport;
+    }
+
+    // Add isFirstRun property based on whether this is the first report
+    latestReport.isFirstRun = count === 1;
+
+    return latestReport;
 }
 
 async function updateCompetitor(userId, competitorId, name, url) {
