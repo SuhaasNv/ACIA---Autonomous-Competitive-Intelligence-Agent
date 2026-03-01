@@ -6,6 +6,26 @@ CREATE TABLE IF NOT EXISTS competitors (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Harden Supabase: Enable Row Level Security (RLS)
+ALTER TABLE competitors ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can only view their own competitors"
+ON competitors FOR SELECT
+USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert their own competitors"
+ON competitors FOR INSERT
+WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own competitors"
+ON competitors FOR UPDATE
+USING (auth.uid() = user_id)
+WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete their own competitors"
+ON competitors FOR DELETE
+USING (auth.uid() = user_id);
+
 CREATE TABLE IF NOT EXISTS reports (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   competitor_id UUID NOT NULL REFERENCES competitors(id) ON DELETE CASCADE,
@@ -15,3 +35,23 @@ CREATE TABLE IF NOT EXISTS reports (
   classification TEXT,
   last_scan_time TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- Harden Supabase: Enable Row Level Security (RLS)
+ALTER TABLE reports ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can only view their own reports"
+ON reports FOR SELECT
+USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert their own reports"
+ON reports FOR INSERT
+WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own reports"
+ON reports FOR UPDATE
+USING (auth.uid() = user_id)
+WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete their own reports"
+ON reports FOR DELETE
+USING (auth.uid() = user_id);

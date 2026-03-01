@@ -23,6 +23,27 @@ async function createTables() {
       );
     `);
 
+    // Harden Supabase: Enable RLS and setup policies for competitors
+    await client.query(`
+      ALTER TABLE public.competitors ENABLE ROW LEVEL SECURITY;
+      
+      DO $$ BEGIN
+        CREATE POLICY "Users can view their own competitors" ON public.competitors FOR SELECT USING (auth.uid() = user_id);
+      EXCEPTION WHEN duplicate_object THEN null; END $$;
+      
+      DO $$ BEGIN
+        CREATE POLICY "Users can insert their own competitors" ON public.competitors FOR INSERT WITH CHECK (auth.uid() = user_id);
+      EXCEPTION WHEN duplicate_object THEN null; END $$;
+
+      DO $$ BEGIN
+        CREATE POLICY "Users can update their own competitors" ON public.competitors FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+      EXCEPTION WHEN duplicate_object THEN null; END $$;
+
+      DO $$ BEGIN
+        CREATE POLICY "Users can delete their own competitors" ON public.competitors FOR DELETE USING (auth.uid() = user_id);
+      EXCEPTION WHEN duplicate_object THEN null; END $$;
+    `);
+
     // Create Reports Table
     await client.query(`
       CREATE TABLE IF NOT EXISTS public.reports (
@@ -34,6 +55,27 @@ async function createTables() {
         classification TEXT,
         last_scan_time TIMESTAMP WITH TIME ZONE DEFAULT NOW()
       );
+    `);
+
+    // Harden Supabase: Enable RLS and setup policies for reports
+    await client.query(`
+      ALTER TABLE public.reports ENABLE ROW LEVEL SECURITY;
+
+      DO $$ BEGIN
+        CREATE POLICY "Users can view their own reports" ON public.reports FOR SELECT USING (auth.uid() = user_id);
+      EXCEPTION WHEN duplicate_object THEN null; END $$;
+
+      DO $$ BEGIN
+        CREATE POLICY "Users can insert their own reports" ON public.reports FOR INSERT WITH CHECK (auth.uid() = user_id);
+      EXCEPTION WHEN duplicate_object THEN null; END $$;
+
+      DO $$ BEGIN
+        CREATE POLICY "Users can update their own reports" ON public.reports FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+      EXCEPTION WHEN duplicate_object THEN null; END $$;
+
+      DO $$ BEGIN
+        CREATE POLICY "Users can delete their own reports" ON public.reports FOR DELETE USING (auth.uid() = user_id);
+      EXCEPTION WHEN duplicate_object THEN null; END $$;
     `);
 
     // Reload Schema Cache so PostgREST picks up the new tables immediately
