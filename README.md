@@ -221,6 +221,18 @@ Falls back to an in-memory `Map` if no API key is configured. The key format is 
 
 ---
 
+## Security Hardening
+
+Signal is built with security first, ensuring safe processing of competitor intelligence data and protection against automated abuse:
+
+- **API Isolation:** All critical API logic is securely confined to the backend to prevent leaking scraping and AI API keys to the client.
+- **Strict Input Validation:** Enforced payload sanitation and parameter validation via `express-validator` to limit DOS and malicious data injections.
+- **Database Armor (Supabase):** Enforced strict PostgreSQL Row Level Security (RLS) over tables to secure user-owned competitor links and intelligence reports natively.
+- **Application Level Protection:** Implemented Helmet.js (HTTP Security Headers), HPP (Parameter pollution protection), and XSS-Clean to defend against common web vulnerabilities.
+- **Intelligent Rate Limiting:** Global rate limiters protect the REST API, while dedicated, aggressive limiters secure the expensive `/api/scan` route against AI-extraction exhaustion attacks.
+
+---
+
 ## Tech Stack
 
 | Layer | Technologies |
