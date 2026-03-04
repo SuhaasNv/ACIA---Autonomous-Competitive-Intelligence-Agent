@@ -2,10 +2,9 @@ const { createClient } = require('@supabase/supabase-js');
 const { env } = require('../config/env');
 
 // Backend MUST use service_role to bypass RLS for admin operations.
-// Anon key cannot bypass RLS - auth.uid() would be null and policies would block.
 const adminKey = env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_ANON_KEY;
 if (!env.SUPABASE_SERVICE_ROLE_KEY && env.SUPABASE_ANON_KEY) {
-    console.warn('[Supabase] SUPABASE_SERVICE_ROLE_KEY not set. Using anon key - backend may fail on RLS-protected tables. Add service role key from Supabase Dashboard → Settings → API.');
+    console.warn('[Supabase] SUPABASE_SERVICE_ROLE_KEY not set. Using anon key - backend may fail on RLS-protected tables. Add service role key in Railway Variables.');
 }
 const supabaseAdmin = createClient(env.SUPABASE_URL, adminKey);
 

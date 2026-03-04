@@ -25,6 +25,7 @@ const allowedOrigins = [
     'http://127.0.0.1:3000',
     'http://127.0.0.1:5173',
     process.env.FRONTEND_URL,
+    'https://acia-autonomous-competitive-intelli.vercel.app',
     /\.vercel\.app$/, // Vercel preview deployments
 ].filter(Boolean);
 app.use(cors({
@@ -63,10 +64,12 @@ app.use('/api/reports', require('./routes/report.routes'));
 
 // Global Error Handler
 app.use((err, req, res, next) => {
-    console.error('[Error]', err.message);
-    res.status(err.status || 500).json({
+    console.error('[Error]', err.message, err.stack);
+    const status = err.status || 500;
+    const isDev = process.env.NODE_ENV !== 'production';
+    res.status(status).json({
         status: 'error',
-        message: err.message || 'Internal Server Error'
+        message: isDev ? err.message : (status >= 500 ? 'Internal Server Error' : err.message)
     });
 });
 
