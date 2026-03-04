@@ -29,12 +29,21 @@ Set these in **Railway Dashboard → Your Project → Variables**:
 
 **Important:** `VITE_API_URL` must point to your Railway backend URL + `/api`.
 
+## "Invalid API key" Error — Fix
+
+1. **Use the service_role key, not anon** — In Supabase Dashboard → Settings → API, copy the **service_role** key (under "Project API keys"). Do NOT use the anon/public key for `SUPABASE_SERVICE_ROLE_KEY`.
+2. **Exact variable name** — In Railway, the variable must be `SUPABASE_SERVICE_ROLE_KEY` (exact spelling).
+3. **No extra characters** — When pasting, ensure no leading/trailing spaces or newlines. Paste directly.
+4. **Both keys needed** — You need BOTH:
+   - `SUPABASE_SERVICE_ROLE_KEY` = service_role key (for DB operations)
+   - `VITE_SUPABASE_ANON_KEY` or `SUPABASE_ANON_KEY` = anon key (for JWT validation)
+
 ## 500 Error on POST /api/competitors — Checklist
 
 1. **Railway Variables** — Add these in Railway Dashboard → Variables:
-   - `VITE_SUPABASE_URL` (or `SUPABASE_URL`) = your Supabase project URL
-   - `SUPABASE_SERVICE_ROLE_KEY` = from Supabase → Settings → API → service_role
-   - `VITE_SUPABASE_ANON_KEY` (or `SUPABASE_ANON_KEY`) = from Supabase → Settings → API → anon
+   - `VITE_SUPABASE_URL` (or `SUPABASE_URL`) = your Supabase project URL (e.g. `https://xxx.supabase.co`)
+   - `SUPABASE_SERVICE_ROLE_KEY` = **service_role** key from Supabase → Settings → API
+   - `VITE_SUPABASE_ANON_KEY` (or `SUPABASE_ANON_KEY`) = **anon** key from Supabase → Settings → API
    - `GEMINI_API_KEY`
    - `BRIGHTDATA_MCP_TOKEN` (optional)
 2. **Redeploy** — After adding variables, trigger a redeploy (Railway → Deployments → Redeploy)

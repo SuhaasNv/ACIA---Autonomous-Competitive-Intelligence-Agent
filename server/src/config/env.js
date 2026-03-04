@@ -5,12 +5,14 @@ const path = require('path');
 require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
 require('dotenv').config({ path: path.resolve(__dirname, '../../../.env') });
 
+const trim = (v) => (typeof v === 'string' ? v.trim() : v);
+
 const env = {
     PORT: process.env.PORT || 3001,
     NODE_ENV: process.env.NODE_ENV || 'development',
-    SUPABASE_URL: process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL,
-    SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY,
-    SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
+    SUPABASE_URL: trim(process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL),
+    SUPABASE_ANON_KEY: trim(process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY),
+    SUPABASE_SERVICE_ROLE_KEY: trim(process.env.SUPABASE_SERVICE_ROLE_KEY),
     BRIGHTDATA_MCP_TOKEN: process.env.BRIGHTDATA_MCP_TOKEN,
     BRIGHTDATA_MCP_URL: process.env.BRIGHTDATA_MCP_URL,
     BRIGHTDATA_PROXY_HOST: process.env.BRIGHTDATA_PROXY_HOST,
