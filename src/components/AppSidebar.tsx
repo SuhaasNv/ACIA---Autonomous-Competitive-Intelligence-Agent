@@ -36,15 +36,6 @@ const AppSidebar = () => {
         ))}
       </nav>
 
-      <div className="border-t border-border/50 p-4">
-        <div className="rounded-lg bg-muted/50 p-3">
-          <p className="text-xs text-muted-foreground">Free Plan</p>
-          <p className="text-xs text-muted-foreground mt-1">3 of 5 competitors used</p>
-          <div className="mt-2 h-1 w-full rounded-full bg-muted">
-            <div className="h-1 w-3/5 rounded-full bg-primary" />
-          </div>
-        </div>
-      </div>
     </aside>
   );
 };

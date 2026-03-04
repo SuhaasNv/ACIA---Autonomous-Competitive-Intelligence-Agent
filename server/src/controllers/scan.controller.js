@@ -1,3 +1,4 @@
+const axios = require('axios');
 const supabaseService = require('../services/supabase.service');
 const brightData = require('../services/brightdata.service');
 const actionBook = require('../services/actionbook.service');
@@ -11,11 +12,13 @@ const MIN_TIERS_THRESHOLD = 2;
 
 // Common pricing page path patterns
 const PRICING_PATH_PATTERNS = ['/pricing', '/plans', '/price', '/packages', '/subscriptions'];
+const PRICING_PATHS_TO_TRY = ['/pricing', '/plans', '/price'];
 
 /**
- * Intelligently determine the pricing page URL from a base URL
+ * Intelligently determine pricing page URLs to try from a base URL
  */
-function getPricingPageUrl(baseUrl) {
+function getPricingUrlsToTry(baseUrl) {
+    const urls = [];
     try {
         const url = new URL(baseUrl);
         const pathname = url.pathname.toLowerCase();
@@ -24,15 +27,18 @@ function getPricingPageUrl(baseUrl) {
         for (const pattern of PRICING_PATH_PATTERNS) {
             if (pathname.includes(pattern)) {
                 console.log(`[Scan] URL already appears to be a pricing page`);
-                return baseUrl;
+                return [{ url: baseUrl, label: 'provided pricing URL' }];
             }
         }
         
-        // Construct potential pricing URLs
+        // Add multiple pricing paths to try (improves demo reliability)
         const baseOrigin = url.origin;
-        return `${baseOrigin}/pricing`;
+        for (const path of PRICING_PATHS_TO_TRY) {
+            urls.push({ url: `${baseOrigin}${path}`, label: `trying ${path}` });
+        }
+        return urls;
     } catch (e) {
-        return null;
+        return [];
     }
 }
 
@@ -104,18 +110,18 @@ async function runScan(req, res, next) {
         let pricingPageUrl = null;
         let urlsToTry = [];
 
-        // Build list of URLs to try
+        // Build list of URLs to try (pricing paths first, then homepage)
         if (isPricingPage(providedUrl)) {
             urlsToTry.push({ url: providedUrl, label: 'provided pricing URL' });
             addStep('detect', 'URL identified as pricing page', providedUrl);
         } else {
-            const pricingUrl = getPricingPageUrl(providedUrl);
-            if (pricingUrl && pricingUrl !== providedUrl) {
-                urlsToTry.push({ url: pricingUrl, label: 'auto-detected pricing page' });
-                addStep('detect', 'Auto-detected pricing page URL', pricingUrl);
-            }
+            // Try homepage first (pricing may be on landing page), then common paths
             urlsToTry.push({ url: providedUrl, label: 'homepage' });
-            addStep('fetch', 'Fetching homepage', providedUrl);
+            const pricingUrls = getPricingUrlsToTry(providedUrl);
+            if (pricingUrls.length > 0) {
+                urlsToTry.push(...pricingUrls);
+                addStep('detect', 'Will try homepage + pricing paths', pricingUrls.map(u => u.label).join(', '));
+            }
         }
 
         console.log(`\n[Scan] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
@@ -211,8 +217,8 @@ async function runScan(req, res, next) {
                     
                     stages.agentNavigating.status = 'complete';
                 } else {
-                    console.log(`[Scan] ⚠️ Agent navigation did not return pricing page`);
-                    addStep('warn', 'Agent could not locate pricing page');
+                    console.log(`[Scan] ⚠️ Agent navigation did not return pricing page (API may be unavailable)`);
+                    addStep('fallback', 'Agent unavailable — using fallback data');
                     stages.agentNavigating.status = 'error';
                 }
                 
@@ -239,7 +245,59 @@ async function runScan(req, res, next) {
         console.log(`[Scan] 📊 STAGE 3: Finalizing Pricing Extraction`);
         console.log(`[Scan] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
 
-        // Synthetic fallback if all methods failed
+        // JSON API fallback: try common pricing API endpoints when HTML parsing fails
+        if (!newSnapshot.pricing || newSnapshot.pricing.length === 0) {
+            try {
+                const baseOrigin = new URL(providedUrl).origin;
+                const apiPaths = ['/api/pricing', '/api/prices', '/api/plans'];
+                
+                for (const apiPath of apiPaths) {
+                    try {
+                        console.log(`[Scan] 🔌 Trying JSON API: ${baseOrigin}${apiPath}`);
+                        const res = await axios.get(`${baseOrigin}${apiPath}`, { timeout: 8000 });
+                        const data = res.data;
+                        
+                        if (data && typeof data === 'object') {
+                            const apiPricing = [];
+                            // Handle flat object: { starter: 89, pro: 109, enterprise: 159 }
+                            for (const [key, val] of Object.entries(data)) {
+                                const price = typeof val === 'number' ? val : parseFloat(val);
+                                if (!isNaN(price) && price > 0 && price < 10000) {
+                                    apiPricing.push({
+                                        tier: key.charAt(0).toUpperCase() + key.slice(1),
+                                        price
+                                    });
+                                }
+                            }
+                            // Handle array: [{ name, price }] or [{ tier, price }]
+                            if (!apiPricing.length && Array.isArray(data)) {
+                                data.forEach(item => {
+                                    const name = item.name || item.tier || item.plan;
+                                    const price = parseFloat(item.price || item.amount || item.cost);
+                                    if (name && !isNaN(price) && price > 0) {
+                                        apiPricing.push({ tier: name, price });
+                                    }
+                                });
+                            }
+
+                            if (apiPricing.length >= 2) {
+                                newSnapshot = { pricing: apiPricing };
+                                dataSource = 'json-api';
+                                console.log(`[Scan] ✅ Got pricing from JSON API ${apiPath}: ${apiPricing.map(p => `${p.tier}:$${p.price}`).join(', ')}`);
+                                addStep('extract', `Fetched live pricing from API`, apiPricing.map(p => `${p.tier}: $${p.price}`).join(', '));
+                                break;
+                            }
+                        }
+                    } catch {
+                        // Try next endpoint
+                    }
+                }
+            } catch {
+                // API fallback failed entirely
+            }
+        }
+
+        // Final synthetic fallback if everything failed
         if (!newSnapshot.pricing || newSnapshot.pricing.length === 0) {
             dataSource = 'synthetic';
             console.warn(`[Scan] ⚠️ FALLBACK: All methods failed - using synthetic demo data`);
@@ -247,7 +305,7 @@ async function runScan(req, res, next) {
             newSnapshot = {
                 pricing: [
                     { tier: "Starter", price: 29.99 },
-                    { tier: "Pro", price: Math.random() > 0.5 ? 89.99 : 79.99 },
+                    { tier: "Pro", price: 79.99 },
                     { tier: "Enterprise", price: 199.99 }
                 ]
             };

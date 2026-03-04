@@ -11,7 +11,8 @@ const validate = (validations) => {
             return next();
         }
 
-        res.status(400).json({ status: 'error', errors: errors.array() });
+        const msg = errors.array().map(e => e.msg).join('; ') || 'Validation failed';
+        res.status(400).json({ status: 'error', error: msg, errors: errors.array() });
     };
 };
 

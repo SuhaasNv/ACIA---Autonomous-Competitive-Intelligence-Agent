@@ -3,7 +3,7 @@ const { env } = require('../config/env');
 
 const BASE_URL = env.ACTIONBOOK_API_URL || 'https://api.actionbook.dev/v1';
 const TIMEOUT_MS = 15000; // 15 second timeout for ActionBook
-const NAVIGATION_TIMEOUT_MS = 20000; // 20 second timeout for navigation tasks
+const NAVIGATION_TIMEOUT_MS = 10000; // 10 second timeout (fails fast when API unavailable)
 
 /**
  * Extract dynamically rendered HTML from a URL using ActionBook.

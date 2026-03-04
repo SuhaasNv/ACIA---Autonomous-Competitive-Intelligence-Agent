@@ -3,10 +3,10 @@ const { requireAuth } = require('../middleware/auth.middleware');
 const rateLimit = require('express-rate-limit');
 const { runScan } = require('../controllers/scan.controller');
 
-// Security Hardening: Strict rate limiting for expensive AI scanning operations
+// Security Hardening: Rate limiting for AI scanning (relaxed for demo: 20/hour)
 const scanLimiter = rateLimit({
     windowMs: 60 * 60 * 1000, // 1 hour
-    max: 5, // Limit each IP to 5 AI scans per hour
+    max: process.env.DEMO_MODE === 'true' ? 50 : 20,
     message: 'Too many scans initiated from this IP, please try again after an hour'
 });
 

@@ -22,6 +22,8 @@ app.use('/api', limiter);
 const allowedOrigins = [
     'http://localhost:3000',
     'http://localhost:5173',
+    'http://127.0.0.1:3000',
+    'http://127.0.0.1:5173',
     process.env.FRONTEND_URL,
     /\.vercel\.app$/, // Vercel preview deployments
 ].filter(Boolean);
@@ -42,6 +44,17 @@ app.use(xss());
 
 // Security Hardening: Prevent HTTP Parameter Pollution
 app.use(hpp());
+
+// Health check (no auth required)
+app.get('/api/health', (req, res) => {
+    res.json({
+        status: 'ok',
+        timestamp: new Date().toISOString(),
+        services: {
+            api: 'running'
+        }
+    });
+});
 
 // Routes
 app.use('/api/scan', scanRoutes);

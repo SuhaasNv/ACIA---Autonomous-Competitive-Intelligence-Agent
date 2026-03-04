@@ -22,8 +22,9 @@ async function authFetch(endpoint: string, options: RequestInit = {}) {
         try {
             const errorData = await res.json();
             errorMsg = errorData.error || errorData.message || errorMsg;
-        } catch (e) {
-            // JSON parse failed, ignore
+        } catch {
+            // JSON parse failed, use status text
+            errorMsg = res.statusText || errorMsg;
         }
         throw new Error(errorMsg);
     }

@@ -51,14 +51,18 @@ function createAxiosClient() {
  */
 async function fetchViaMcp(url) {
     const token = env.BRIGHTDATA_MCP_TOKEN;
-    if (!token) {
-        throw new Error('BRIGHTDATA_MCP_TOKEN not configured');
+    const mcpUrl = env.BRIGHTDATA_MCP_URL;
+    if (!token && !mcpUrl) {
+        throw new Error('BRIGHTDATA_MCP_TOKEN or BRIGHTDATA_MCP_URL not configured');
     }
 
     const { Client } = await import("@modelcontextprotocol/sdk/client/index.js");
     const { SSEClientTransport } = await import("@modelcontextprotocol/sdk/client/sse.js");
 
-    const sseUrl = new URL(`https://mcp.brightdata.com/sse?token=${token}&groups=advanced_scraping,business`);
+    // Use full URL if provided, otherwise construct SSE URL from token
+    const sseUrl = mcpUrl
+        ? new URL(mcpUrl)
+        : new URL(`https://mcp.brightdata.com/sse?token=${token}&groups=advanced_scraping,business`);
     const transport = new SSEClientTransport(sseUrl);
     const client = new Client({ name: "acia-server", version: "1.0.0" }, { capabilities: {} });
 
