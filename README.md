@@ -12,6 +12,8 @@
 [![Gemini AI](https://img.shields.io/badge/Gemini-2.5_Flash-4285F4?style=flat-square&logo=google)](https://ai.google.dev/)
 [![Bright Data](https://img.shields.io/badge/Bright_Data-Scraping-ff6b35?style=flat-square)](https://brightdata.com/)
 
+**Live app:** [https://acia-autonomous-competitive-intelli.vercel.app/](https://acia-autonomous-competitive-intelli.vercel.app/) · **Demo competitor:** [https://demowebsite-blush.vercel.app/](https://demowebsite-blush.vercel.app/) (Acme AI)
+
 [Overview](#overview) · [Screenshots](#screenshots) · [Live Demo](#live-demo) · [Getting Started](#getting-started) · [Architecture](#architecture) · [Integrations](#integrations) · [API](#api-reference)
 
 </div>
