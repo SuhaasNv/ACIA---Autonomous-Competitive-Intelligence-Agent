@@ -17,7 +17,7 @@ async function getCompetitorForUser(userId) {
 
     if (error && error.code !== 'PGRST116') { // PGRST116 indicates no rows returned
         console.error('[Supabase Error] getCompetitorForUser:', error);
-        throw new Error('Failed to fetch competitor');
+        throw new Error(`Failed to fetch competitor: ${error.message || error.code}`);
     }
 
     return data;
@@ -30,7 +30,7 @@ async function saveReport(reportData) {
 
     if (error) {
         console.error('[Supabase Error] saveReport:', error);
-        throw new Error('Failed to save report');
+        throw new Error(`Failed to save report: ${error.message || error.code}`);
     }
 }
 
@@ -48,7 +48,7 @@ async function createCompetitor(userId, name, url) {
 
     if (error) {
         console.error('[Supabase Error] createCompetitor:', error);
-        throw new Error('Failed to create competitor');
+        throw new Error(`Failed to create competitor: ${error.message || error.code}`);
     }
 
     return data;

@@ -62,14 +62,18 @@ app.use('/api/scan', scanRoutes);
 app.use('/api/competitors', require('./routes/competitor.routes'));
 app.use('/api/reports', require('./routes/report.routes'));
 
-// Global Error Handler
+// Global Error Handler - return message to help debug deployment issues
 app.use((err, req, res, next) => {
     console.error('[Error]', err.message, err.stack);
     const status = err.status || 500;
-    const isDev = process.env.NODE_ENV !== 'production';
+    // Sanitize: never expose keys, tokens, or connection strings
+    let msg = err.message || 'Internal Server Error';
+    if (/api[_-]?key|secret|password|token|connection/i.test(msg)) {
+        msg = 'Configuration error - check server logs';
+    }
     res.status(status).json({
         status: 'error',
-        message: isDev ? err.message : (status >= 500 ? 'Internal Server Error' : err.message)
+        message: msg
     });
 });
 
