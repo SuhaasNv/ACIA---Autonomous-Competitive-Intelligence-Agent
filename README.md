@@ -12,7 +12,7 @@
 [![Gemini AI](https://img.shields.io/badge/Gemini-2.5_Flash-4285F4?style=flat-square&logo=google)](https://ai.google.dev/)
 [![Bright Data](https://img.shields.io/badge/Bright_Data-Scraping-ff6b35?style=flat-square)](https://brightdata.com/)
 
-[Overview](#overview) · [Screenshots](#screenshots) · [Getting Started](#getting-started) · [Architecture](#architecture) · [Integrations](#integrations) · [API](#api-reference)
+[Overview](#overview) · [Screenshots](#screenshots) · [Live Demo](#live-demo) · [Getting Started](#getting-started) · [Architecture](#architecture) · [Integrations](#integrations) · [API](#api-reference)
 
 </div>
 
@@ -25,6 +25,16 @@ Signal monitors competitor pricing pages and delivers AI-powered strategic insig
 The platform is built around a cost-first design: HTML is scraped, parsed into structured JSON, and compared against a stored baseline. Gemini is only invoked when the delta crosses a 5% significance threshold. Unchanged scans return instantly at near-zero cost.
 
 **Who it's for:** SaaS founders and product managers tracking competitor pricing strategy.
+
+---
+
+## Live Demo
+
+**[→ Try Signal live](https://acia-autonomous-competitive-intelli.vercel.app/)**
+
+The full app is deployed on Vercel with the backend on Railway. Sign in with Supabase to add competitors and run scans.
+
+**Example competitor to try:** [Acme AI](https://demowebsite-blush.vercel.app/) — a demo site with pricing you can scan.
 
 ---
 
