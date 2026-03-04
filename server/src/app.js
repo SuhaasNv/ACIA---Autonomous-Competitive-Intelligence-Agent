@@ -19,7 +19,21 @@ const limiter = rateLimit({
 });
 app.use('/api', limiter);
 
-app.use(cors({ origin: ['http://localhost:3000', 'http://localhost:5173'] }));
+const allowedOrigins = [
+    'http://localhost:3000',
+    'http://localhost:5173',
+    process.env.FRONTEND_URL,
+    /\.vercel\.app$/, // Vercel preview deployments
+].filter(Boolean);
+app.use(cors({
+    origin: (origin, cb) => {
+        if (!origin) return cb(null, true);
+        const allowed = allowedOrigins.some(o =>
+            typeof o === 'string' ? o === origin : o.test(origin)
+        );
+        cb(null, allowed ? origin : false);
+    }
+}));
 // Security: limit body payload size to prevent DOS
 app.use(express.json({ limit: '10kb' }));
 
