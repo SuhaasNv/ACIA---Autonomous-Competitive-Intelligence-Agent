@@ -10,9 +10,8 @@ const trim = (v) => (typeof v === 'string' ? v.trim() : v);
 const env = {
     PORT: process.env.PORT || 3001,
     NODE_ENV: process.env.NODE_ENV || 'development',
-    SUPABASE_URL: trim(process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL),
-    SUPABASE_ANON_KEY: trim(process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY),
-    SUPABASE_SERVICE_ROLE_KEY: trim(process.env.SUPABASE_SERVICE_ROLE_KEY),
+    DATABASE_URL: trim(process.env.DATABASE_URL),
+    JWT_SECRET: trim(process.env.JWT_SECRET),
     BRIGHTDATA_MCP_TOKEN: process.env.BRIGHTDATA_MCP_TOKEN,
     BRIGHTDATA_MCP_URL: process.env.BRIGHTDATA_MCP_URL,
     BRIGHTDATA_PROXY_HOST: process.env.BRIGHTDATA_PROXY_HOST,
@@ -23,8 +22,15 @@ const env = {
     ACTIONBOOK_API_KEY: process.env.ACTIONBOOK_API_KEY,
     ACONTEXT_API_URL: process.env.ACONTEXT_API_URL || 'https://api.acontext.ai/v1',
     ACONTEXT_API_KEY: process.env.ACONTEXT_API_KEY,
-    GEMINI_API_KEY: process.env.GEMINI_API_KEY,
-    GEMINI_MODEL: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
+    OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+    OPENAI_MODEL: process.env.OPENAI_MODEL || 'gpt-4o-mini',
 };
+
+if (!env.DATABASE_URL) {
+    console.warn('[Config] DATABASE_URL not set. Database calls will fail until it is configured.');
+}
+if (!env.JWT_SECRET) {
+    console.warn('[Config] JWT_SECRET not set. Set a strong secret in Railway Variables before going to production.');
+}
 
 module.exports = { env };

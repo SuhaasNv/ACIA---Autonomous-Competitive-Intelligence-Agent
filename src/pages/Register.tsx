@@ -22,7 +22,6 @@ const Register = () => {
       setMessage(null);
       if (isSignUp) {
         await signUpWithEmail(email, password);
-        setMessage({ type: "success", text: "Check your email to confirm your account." });
       } else {
         await signInWithEmail(email, password);
       }

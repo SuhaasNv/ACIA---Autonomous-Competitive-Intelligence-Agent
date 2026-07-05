@@ -212,7 +212,7 @@ const ReportPage = () => {
           >
             <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/30 w-fit px-3 py-1.5 rounded-lg border border-border/50">
               <Info className="h-3.5 w-3.5" />
-              Generated autonomously by Gemini 2.5 Flash
+              Generated autonomously by OpenAI GPT-4o-mini
             </div>
           </motion.section>
         </div>

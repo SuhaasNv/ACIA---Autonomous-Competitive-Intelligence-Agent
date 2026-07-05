@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
-import { supabase } from '@/lib/supabase';
+import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 
 const Onboarding = () => {
@@ -26,14 +26,7 @@ const Onboarding = () => {
         setLoading(true);
 
         try {
-            const { error } = await supabase.from('profiles').insert({
-                id: user.id,
-                full_name: fullName,
-                company_name: companyName,
-                company_url: companyUrl,
-            });
-
-            if (error) throw error;
+            await api.createProfile(fullName, companyName, companyUrl);
 
             await refreshProfile();
             toast({

@@ -1,9 +1,6 @@
-const { createClient } = require('@supabase/supabase-js');
-const { env } = require('../config/env');
+const authService = require('../services/auth.service');
 
-const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY);
-
-const requireAuth = async (req, res, next) => {
+const requireAuth = (req, res, next) => {
     try {
         const authHeader = req.headers.authorization;
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -11,16 +8,10 @@ const requireAuth = async (req, res, next) => {
         }
 
         const token = authHeader.split(' ')[1];
-        const { data: { user }, error } = await supabase.auth.getUser(token);
-
-        if (error || !user) {
-            return res.status(401).json({ error: 'Unauthorized: Invalid token' });
-        }
-
-        req.user = user;
+        req.user = authService.verifyToken(token);
         next();
     } catch (error) {
-        next(error);
+        return res.status(401).json({ error: 'Unauthorized: Invalid token' });
     }
 };
 

@@ -25,4 +25,15 @@ const validateIdParam = validate([
     // If you need path param validations
 ]);
 
-module.exports = { validate, validateCompetitor, validateIdParam };
+const validateAuth = validate([
+    body('email').trim().isEmail().withMessage('Valid email is required').normalizeEmail(),
+    body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+]);
+
+const validateProfile = validate([
+    body('fullName').trim().notEmpty().withMessage('Full name is required').escape(),
+    body('companyName').trim().notEmpty().withMessage('Company name is required').escape(),
+    body('companyUrl').trim().isURL().withMessage('Valid company URL is required').escape(),
+]);
+
+module.exports = { validate, validateCompetitor, validateIdParam, validateAuth, validateProfile };

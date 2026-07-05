@@ -1,52 +1,48 @@
-# Deployment Guide — Railway (Backend) + Vercel (Frontend)
+# Deployment Guide — Railway (Full Stack)
 
-## Railway Backend — Required Environment Variables
+Both the frontend and backend deploy as separate Railway services in the same project, backed by a Railway Postgres plugin.
 
-Set these in **Railway Dashboard → Your Project → Variables**:
+## 1. Postgres
+
+In your Railway project, add a **Postgres** plugin. Railway auto-injects `DATABASE_URL` into any service in the same project that references it.
+
+Run the schema once against it:
+
+```bash
+railway run --service <backend-service> psql $DATABASE_URL -f db/schema.sql
+```
+
+(Or paste the contents of `db/schema.sql` into a local `psql` session connected to the Railway Postgres instance.)
+
+## 2. Backend service (root directory: `server/`)
+
+**Railway Dashboard → Backend Service → Variables:**
 
 | Variable | Required | Description |
-|----------|----------|-------------|
-| `SUPABASE_URL` | ✅ | Or use `VITE_SUPABASE_URL` — Supabase project URL |
-| `SUPABASE_SERVICE_ROLE_KEY` | ✅ | From Supabase Dashboard → Settings → API → service_role |
-| `SUPABASE_ANON_KEY` | ✅ | Or use `VITE_SUPABASE_ANON_KEY` — for auth validation |
-| `GEMINI_API_KEY` | ✅ | For AI insights |
+|----------|----------|--------------|
+| `DATABASE_URL` | ✅ | Provided automatically if the Postgres plugin is referenced |
+| `JWT_SECRET` | ✅ | Long random string used to sign auth tokens |
+| `OPENAI_API_KEY` | ✅ | For AI insight generation |
+| `OPENAI_MODEL` | Optional | Defaults to `gpt-4o-mini` |
+| `FRONTEND_URL` | ✅ | Your frontend service's Railway URL, for CORS |
 | `BRIGHTDATA_MCP_TOKEN` | Optional | For scraping (falls back to direct fetch) |
 
-**Copy from your local `.env`:**
-- `VITE_SUPABASE_URL` → set as `SUPABASE_URL` or `VITE_SUPABASE_URL`
-- `SUPABASE_SERVICE_ROLE_KEY`
-- `VITE_SUPABASE_ANON_KEY` → set as `SUPABASE_ANON_KEY` or `VITE_SUPABASE_ANON_KEY`
-- `GEMINI_API_KEY`
-- `BRIGHTDATA_MCP_TOKEN`
+Build/start commands (Nixpacks auto-detects via `server/package.json`): `npm install` then `npm start`.
 
-## Vercel Frontend — Required Environment Variables
+## 3. Frontend service (root directory: `/`)
+
+**Railway Dashboard → Frontend Service → Variables:**
 
 | Variable | Required | Description |
-|----------|----------|-------------|
-| `VITE_SUPABASE_URL` | ✅ | Supabase project URL |
-| `VITE_SUPABASE_ANON_KEY` | ✅ | Supabase anon key |
-| `VITE_API_URL` | ✅ | Backend API URL, e.g. `https://acia-autonomous-competitive-intelligence-agent-production.up.railway.app/api` |
+|----------|----------|--------------|
+| `VITE_API_URL` | ✅ | Backend service's Railway URL + `/api`, e.g. `https://acia-backend-production.up.railway.app/api` |
 
-**Important:** `VITE_API_URL` must point to your Railway backend URL + `/api`.
+Build command: `npm run build`. Start command: `npm start` (runs `serve.js`, a small Express server that serves the Vite `dist/` build with SPA fallback).
 
-## "Invalid API key" Error — Fix
+**Important:** `VITE_API_URL` must point to your Railway backend URL + `/api`, no trailing slash.
 
-1. **Use the service_role key, not anon** — In Supabase Dashboard → Settings → API, copy the **service_role** key (under "Project API keys"). Do NOT use the anon/public key for `SUPABASE_SERVICE_ROLE_KEY`.
-2. **Exact variable name** — In Railway, the variable must be `SUPABASE_SERVICE_ROLE_KEY` (exact spelling).
-3. **No extra characters** — When pasting, ensure no leading/trailing spaces or newlines. Paste directly.
-4. **Both keys needed** — You need BOTH:
-   - `SUPABASE_SERVICE_ROLE_KEY` = service_role key (for DB operations)
-   - `VITE_SUPABASE_ANON_KEY` or `SUPABASE_ANON_KEY` = anon key (for JWT validation)
+## Troubleshooting
 
-## 500 Error on POST /api/competitors — Checklist
-
-1. **Railway Variables** — Add these in Railway Dashboard → Variables:
-   - `VITE_SUPABASE_URL` (or `SUPABASE_URL`) = your Supabase project URL (e.g. `https://xxx.supabase.co`)
-   - `SUPABASE_SERVICE_ROLE_KEY` = **service_role** key from Supabase → Settings → API
-   - `VITE_SUPABASE_ANON_KEY` (or `SUPABASE_ANON_KEY`) = **anon** key from Supabase → Settings → API
-   - `GEMINI_API_KEY`
-   - `BRIGHTDATA_MCP_TOKEN` (optional)
-2. **Redeploy** — After adding variables, trigger a redeploy (Railway → Deployments → Redeploy)
-3. **Railway Logs** — Check logs for `[Supabase Error]` or `[Error]` to see the actual failure
-4. **Supabase Tables** — Ensure `competitors` and `reports` tables exist (run `sql_init.sql` in Supabase SQL Editor)
-5. **Vercel VITE_API_URL** — Must be `https://YOUR-RAILWAY-APP.up.railway.app/api` (no trailing slash)
+- **401s on every request after deploy:** Check `JWT_SECRET` is set identically across backend restarts — if it changes, all previously issued tokens become invalid and users are logged out.
+- **500 on `/api/*` routes:** Check Railway backend logs for `[Error]`; usually `DATABASE_URL` isn't set or the schema hasn't been applied yet (run step 1).
+- **CORS errors in the browser console:** Confirm `FRONTEND_URL` on the backend service exactly matches the frontend's Railway URL (scheme + host, no trailing slash).

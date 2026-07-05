@@ -1,12 +1,11 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+const OpenAI = require('openai');
 const { env } = require('../config/env');
 
 async function analyzeDelta(deltaJson) {
-    if (!env.GEMINI_API_KEY) {
-        console.warn('[Gemini] Missing API Key. Returning placeholder insight.');
-        // Return enhanced classification data structure
-        return { 
-            insight: "Gemini API key not configured.", 
+    if (!env.OPENAI_API_KEY) {
+        console.warn('[OpenAI] Missing API Key. Returning placeholder insight.');
+        return {
+            insight: "OpenAI API key not configured.",
             classification: "Stable",
             confidence: 85,
             impact: "Low"
@@ -14,10 +13,7 @@ async function analyzeDelta(deltaJson) {
     }
 
     try {
-        const genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY, {
-            apiVersion: "v1beta",
-        });
-        const model = genAI.getGenerativeModel({ model: env.GEMINI_MODEL || "gemini-2.5-flash" });
+        const openai = new OpenAI({ apiKey: env.OPENAI_API_KEY });
 
         const prompt = `
 You are a competitive intelligence analyst. Analyze this competitor pricing change and respond ONLY with a valid JSON object — no markdown, no extra text, no code fences.
@@ -34,19 +30,22 @@ Delta Data:
 ${JSON.stringify(deltaJson)}
     `.trim();
 
-        const result = await model.generateContent(prompt);
-        const responseText = result.response.text();
-        console.log('[Gemini] Raw response:', responseText.slice(0, 300));
+        const result = await openai.chat.completions.create({
+            model: env.OPENAI_MODEL,
+            messages: [{ role: 'user', content: prompt }],
+            response_format: { type: 'json_object' },
+        });
 
-        // Extract the first {...} JSON block from the response, tolerant of extra text
+        const responseText = result.choices[0].message.content;
+        console.log('[OpenAI] Raw response:', responseText.slice(0, 300));
+
         const jsonMatch = responseText.match(/\{[\s\S]*\}/);
         if (!jsonMatch) {
-            throw new Error(`No JSON object found in Gemini response: ${responseText.slice(0, 200)}`);
+            throw new Error(`No JSON object found in OpenAI response: ${responseText.slice(0, 200)}`);
         }
 
         const parsed = JSON.parse(jsonMatch[0]);
 
-        // Validate required fields with fallbacks
         return {
             insight: typeof parsed.insight === 'string' && parsed.insight.trim()
                 ? parsed.insight.trim()
@@ -62,10 +61,10 @@ ${JSON.stringify(deltaJson)}
                 : 'Low',
         };
     } catch (error) {
-        console.error('[Gemini API Error]', error.message);
-        return { 
-            insight: "Pricing intelligence unavailable — Gemini analysis could not be completed.",
-            classification: "Stable", 
+        console.error('[OpenAI API Error]', error.message);
+        return {
+            insight: "Pricing intelligence unavailable — OpenAI analysis could not be completed.",
+            classification: "Stable",
             confidence: 80,
             impact: "Low"
         };

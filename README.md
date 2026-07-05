@@ -8,8 +8,8 @@
 
 [![React](https://img.shields.io/badge/React-18-61dafb?style=flat-square&logo=react)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178c6?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
-[![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ecf8e?style=flat-square&logo=supabase)](https://supabase.com/)
-[![Gemini AI](https://img.shields.io/badge/Gemini-2.5_Flash-4285F4?style=flat-square&logo=google)](https://ai.google.dev/)
+[![Railway](https://img.shields.io/badge/Railway-PostgreSQL-0B0D0E?style=flat-square&logo=railway)](https://railway.app/)
+[![OpenAI](https://img.shields.io/badge/OpenAI-GPT--4o--mini-412991?style=flat-square&logo=openai)](https://platform.openai.com/)
 [![Bright Data](https://img.shields.io/badge/Bright_Data-Scraping-ff6b35?style=flat-square)](https://brightdata.com/)
 
 **Live app:** [https://acia-autonomous-competitive-intelli.vercel.app/](https://acia-autonomous-competitive-intelli.vercel.app/) · **Demo competitor:** [https://demowebsite-blush.vercel.app/](https://demowebsite-blush.vercel.app/) (Acme AI)
@@ -24,7 +24,7 @@
 
 Signal monitors competitor pricing pages and delivers AI-powered strategic insights whenever a meaningful change is detected. Add a competitor URL, run a scan, and get a structured report — no manual research required.
 
-The platform is built around a cost-first design: HTML is scraped, parsed into structured JSON, and compared against a stored baseline. Gemini is only invoked when the delta crosses a 5% significance threshold. Unchanged scans return instantly at near-zero cost.
+The platform is built around a cost-first design: HTML is scraped, parsed into structured JSON, and compared against a stored baseline. OpenAI is only invoked when the delta crosses a 5% significance threshold. Unchanged scans return instantly at near-zero cost.
 
 **Who it's for:** SaaS founders and product managers tracking competitor pricing strategy.
 
@@ -34,7 +34,7 @@ The platform is built around a cost-first design: HTML is scraped, parsed into s
 
 **[→ Try Signal live](https://acia-autonomous-competitive-intelli.vercel.app/)**
 
-The full app is deployed on Vercel with the backend on Railway. Sign in with Supabase to add competitors and run scans.
+The full app is deployed on Railway (frontend + backend + Postgres, as separate services in one project). Sign in with your Signal account to add competitors and run scans.
 
 **Example competitor to try:** [Acme AI](https://demowebsite-blush.vercel.app/) — a demo site with pricing you can scan.
 
@@ -104,7 +104,7 @@ The full app is deployed on Vercel with the backend on Railway. Sign in with Sup
 
 <img src="images/dashboard%20after.png" alt="Dashboard showing pricing changes detected — Aggressive Expansion classification" width="100%" />
 
-*Signal surfaces the change with per-tier deltas (Starter +69%, Pro +102%, Enterprise −25.1%), a strategic classification, and a Gemini-generated insight — all on the main dashboard.*
+*Signal surfaces the change with per-tier deltas (Starter +69%, Pro +102%, Enterprise −25.1%), a strategic classification, and an OpenAI-generated insight — all on the main dashboard.*
 
 ---
 
@@ -118,9 +118,9 @@ The full app is deployed on Vercel with the backend on Railway. Sign in with Sup
 
 ### Report — Strategic Intelligence
 
-<img src="images/reports%20after.png" alt="Full report with context insight and Gemini strategic analysis" width="100%" />
+<img src="images/reports%20after.png" alt="Full report with context insight and OpenAI strategic analysis" width="100%" />
 
-*The complete intelligence report: pricing delta table, contextual insight, and a full Gemini 2.5 Flash strategic analysis. Generated autonomously.*
+*The complete intelligence report: pricing delta table, contextual insight, and a full OpenAI GPT-4o-mini strategic analysis. Generated autonomously.*
 
 ---
 
@@ -129,8 +129,8 @@ The full app is deployed on Vercel with the backend on Railway. Sign in with Sup
 ### Prerequisites
 
 - Node.js 18+
-- Supabase account (free tier works)
-- Gemini API key
+- Railway account with a Postgres plugin (or any local Postgres instance for dev)
+- OpenAI API key
 - Bright Data MCP token or proxy credentials (optional — falls back to direct fetch)
 - ActionBook API key (optional — fallback for dynamic pages)
 - Acontext API key (optional — falls back to in-memory)
@@ -169,8 +169,8 @@ cd server && npm run dev       # Backend  → http://localhost:3001
           │                              │                 │                  │                  │
           ▼                              ▼                 ▼                  ▼                  ▼
   ┌───────────────┐             ┌────────────────┐  ┌────────────┐   ┌──────────────┐   ┌──────────────┐
-  │  Bright Data  │             │   ActionBook   │  │  Acontext  │   │   Supabase   │   │    Gemini    │
-  │  (Scraping)   │             │  (Web Agent)   │  │  (Memory)  │   │  (DB + Auth) │   │  (Insights)  │
+  │  Bright Data  │             │   ActionBook   │  │  Acontext  │   │   Railway    │   │    OpenAI    │
+  │  (Scraping)   │             │  (Web Agent)   │  │  (Memory)  │   │  Postgres    │   │  (Insights)  │
   └───────┬───────┘             └───────┬────────┘  └─────┬──────┘   └──────────────┘   └──────────────┘
           │                             │                 │
           │  MCP → Proxy → Direct       │  Agent nav      │  get/set latest snapshot
@@ -181,7 +181,7 @@ cd server && npm run dev       # Backend  → http://localhost:3001
                            ┌─────────────────────────┐
                            │       Delta Engine       │
                            │  JSON diff of snapshots  │
-                           │  ≥5% change → Gemini     │
+                           │  ≥5% change → OpenAI     │
                            └─────────────────────────┘
 ```
 
@@ -192,8 +192,8 @@ cd server && npm run dev       # Backend  → http://localhost:3001
 3. **Agent fallback** — If fewer than 2 tiers are found, ActionBook autonomously navigates to the pricing page
 4. **Baseline** — Acontext retrieves the previous snapshot for this user
 5. **Delta** — The diff engine computes changes; if no baseline exists, this is flagged as a first run
-6. **Insight** — Gemini 2.5 Flash is called only if the delta is ≥5%; otherwise skipped
-7. **Store** — The report is saved to Supabase; the new snapshot overwrites the Acontext baseline
+6. **Insight** — OpenAI `gpt-4o-mini` is called only if the delta is ≥5%; otherwise skipped
+7. **Store** — The report is saved to Railway Postgres; the new snapshot overwrites the Acontext baseline
 
 ---
 
@@ -239,7 +239,7 @@ Signal is built with security first, ensuring safe processing of competitor inte
 
 - **API Isolation:** All critical API logic is securely confined to the backend to prevent leaking scraping and AI API keys to the client.
 - **Strict Input Validation:** Enforced payload sanitation and parameter validation via `express-validator` to limit DOS and malicious data injections.
-- **Database Armor (Supabase):** Enforced strict PostgreSQL Row Level Security (RLS) over tables to secure user-owned competitor links and intelligence reports natively.
+- **Database Armor:** Every query is scoped by `user_id` at the query layer (no cross-tenant reads/writes are possible), and passwords are hashed with bcrypt — never stored or logged in plaintext.
 - **Application Level Protection:** Implemented Helmet.js (HTTP Security Headers), HPP (Parameter pollution protection), and XSS-Clean to defend against common web vulnerabilities.
 - **Intelligent Rate Limiting:** Global rate limiters protect the REST API, while dedicated, aggressive limiters secure the expensive `/api/scan` route against AI-extraction exhaustion attacks.
 
@@ -251,11 +251,11 @@ Signal is built with security first, ensuring safe processing of competitor inte
 |---|---|
 | Frontend | React 18, TypeScript, Vite, Tailwind CSS, shadcn/ui, Framer Motion |
 | Backend | Node.js, Express |
-| Database & Auth | Supabase (PostgreSQL + Auth) |
+| Database & Auth | Railway Postgres, custom JWT + bcrypt auth |
 | Scraping | Bright Data (MCP, Proxy, Direct) |
 | Web Agent | ActionBook |
 | Memory | Acontext |
-| AI | Google Gemini 2.5 Flash |
+| AI | OpenAI GPT-4o-mini |
 
 ---
 
@@ -265,16 +265,18 @@ Signal is built with security first, ensuring safe processing of competitor inte
 ACIA/
 ├── src/                        # Frontend (React + Vite)
 │   ├── components/             # UI components (shadcn + custom)
-│   ├── contexts/               # Auth context (Supabase)
+│   ├── contexts/               # Auth context (JWT-based)
 │   ├── pages/                  # Landing, Dashboard, Processing, Report
-│   └── lib/                    # API client, Supabase client
+│   └── lib/                    # API client
 ├── server/                     # Backend (Node.js + Express)
 │   ├── src/
-│   │   ├── controllers/        # Scan controller
+│   │   ├── controllers/        # Auth, profile, scan, competitor, report controllers
 │   │   ├── middleware/         # JWT authentication
 │   │   ├── routes/             # API route definitions
-│   │   └── services/           # brightdata, actionbook, acontext, gemini, diff
+│   │   └── services/           # db (Postgres), auth, brightdata, actionbook, acontext, openai, diff
 │   └── server.js
+├── db/                         # Postgres schema (db/schema.sql)
+├── serve.js                    # Static server for the built frontend (Railway)
 ├── images/                     # Product screenshots
 ├── docs/                       # Architecture and flow documentation
 └── .env.example                # Environment variable reference
@@ -286,10 +288,10 @@ ACIA/
 
 | Variable | Required | Description |
 |---|---|---|
-| `VITE_SUPABASE_URL` | Yes | Supabase project URL |
-| `VITE_SUPABASE_ANON_KEY` | Yes | Supabase anon key |
-| `SUPABASE_SERVICE_ROLE_KEY` | Yes | Backend service role key |
-| `GEMINI_API_KEY` | Yes | Google Gemini API key |
+| `DATABASE_URL` | Yes | Railway Postgres connection string |
+| `JWT_SECRET` | Yes | Secret used to sign/verify auth tokens |
+| `OPENAI_API_KEY` | Yes | OpenAI API key |
+| `VITE_API_URL` | Yes | Backend API URL for the frontend build |
 | `BRIGHTDATA_MCP_TOKEN` | No | Bright Data MCP token (primary) |
 | `BRIGHTDATA_PROXY_HOST` | No | Bright Data proxy host |
 | `BRIGHTDATA_USERNAME` | No | Bright Data proxy username |

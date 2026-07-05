@@ -58,7 +58,7 @@ const features = [
     icon: GitCompare,
     title: "Precision Delta Engine",
     description:
-      "A custom diff engine compares JSON snapshots and scores change magnitude. Gemini AI only fires when the delta is ≥ 5%.",
+      "A custom diff engine compares JSON snapshots and scores change magnitude. OpenAI only fires when the delta is ≥ 5%.",
   },
   {
     icon: Globe,
@@ -70,7 +70,7 @@ const features = [
     icon: Brain,
     title: "AI Strategic Briefs",
     description:
-      "Gemini 2.5 Flash converts raw structural diffs into actionable reports: what changed, why it matters, and how to respond.",
+      "OpenAI GPT-4o-mini converts raw structural diffs into actionable reports: what changed, why it matters, and how to respond.",
   },
   {
     icon: BellOff,
@@ -82,7 +82,7 @@ const features = [
     icon: ShieldCheck,
     title: "Secure by Default",
     description:
-      "Supabase Auth with JWT middleware. Row-level security on all data. Rate limiting on all endpoints. Your intel stays yours.",
+      "Custom JWT auth with bcrypt password hashing. Every query scoped to your account. Rate limiting on all endpoints. Your intel stays yours.",
   },
 ];
 
@@ -103,7 +103,7 @@ const steps = [
     number: "03",
     title: "Get actionable intel",
     description:
-      "If a material change is detected, Gemini generates a strategic brief — what shifted, what it signals, and how to respond.",
+      "If a material change is detected, OpenAI generates a strategic brief — what shifted, what it signals, and how to respond.",
   },
 ];
 
@@ -116,8 +116,8 @@ const stats = [
 
 const poweredBy = [
   { name: "Bright Data", tagline: "Scraping" },
-  { name: "Gemini 2.5", tagline: "AI Analysis" },
-  { name: "Supabase", tagline: "Auth & DB" },
+  { name: "OpenAI", tagline: "AI Analysis" },
+  { name: "Railway", tagline: "Auth & DB" },
   { name: "ActionBook", tagline: "Web Agent" },
   { name: "Acontext", tagline: "Memory Layer" },
 ];
@@ -301,7 +301,7 @@ const Landing = () => {
               </h2>
               <p className="mt-4 sm:mt-5 text-sm text-muted-foreground leading-relaxed max-w-md">
                 Every scan produces a structured intelligence report — per-tier delta scoring, strategic
-                classification, and a Gemini-generated analysis telling you exactly what to do next.
+                classification, and an OpenAI-generated analysis telling you exactly what to do next.
               </p>
               <div className="mt-6 sm:mt-8">
                 <Link
@@ -378,7 +378,7 @@ const Landing = () => {
                   <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
                     <Brain className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-primary flex-shrink-0" />
                     <span className="text-primary text-[9px] sm:text-[10px] font-semibold uppercase tracking-widest">
-                      Gemini Strategic Analysis
+                      OpenAI Strategic Analysis
                     </span>
                   </div>
                   <p className="text-muted-foreground/80 text-[10px] sm:text-[11px] leading-relaxed font-sans">

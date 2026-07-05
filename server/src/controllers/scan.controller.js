@@ -1,11 +1,11 @@
 const axios = require('axios');
-const supabaseService = require('../services/supabase.service');
+const db = require('../services/db.service');
 const brightData = require('../services/brightdata.service');
 const actionBook = require('../services/actionbook.service');
 const parser = require('../services/parser.service');
 const acontext = require('../services/acontext.service');
 const diffEngine = require('../services/diff.service');
-const gemini = require('../services/gemini.service');
+const openai = require('../services/openai.service');
 
 // Minimum tiers required before triggering additional strategies
 const MIN_TIERS_THRESHOLD = 2;
@@ -86,7 +86,7 @@ async function runScan(req, res, next) {
         console.log(`[Scan] ========================================`);
 
         // 1. Fetch user's competitor
-        const competitor = await supabaseService.getCompetitorForUser(userId);
+        const competitor = await db.getCompetitorForUser(userId);
         if (!competitor) {
             console.log('[Scan] ❌ No competitor configured');
             return res.status(404).json({ error: 'No competitor configured' });
@@ -374,7 +374,7 @@ async function runScan(req, res, next) {
         stages.computingDelta.endTime = Date.now();
 
         // ============================================================
-        // STAGE 5: Generate Insight (Gemini - only if ≥5% change)
+        // STAGE 5: Generate Insight (OpenAI - only if ≥5% change)
         // ============================================================
         stages.generatingInsight.status = 'active';
         stages.generatingInsight.startTime = Date.now();
@@ -391,25 +391,25 @@ async function runScan(req, res, next) {
         };
 
         if (hasSignificantChange) {
-            console.log(`[Scan] 🔥 Significant change detected - calling Gemini for analysis...`);
+            console.log(`[Scan] 🔥 Significant change detected - calling OpenAI for analysis...`);
             addStep('ai', 'Generating AI strategic insight...');
-            llmInsight = await gemini.analyzeDelta(delta);
+            llmInsight = await openai.analyzeDelta(delta);
             addStep('insight', `Classification: ${llmInsight.classification}`);
-            console.log(`[Scan] ✅ Gemini analysis complete`);
+            console.log(`[Scan] ✅ OpenAI analysis complete`);
             console.log(`[Scan]    - Classification: ${llmInsight.classification}`);
             console.log(`[Scan]    - Confidence: ${llmInsight.confidence}%`);
             console.log(`[Scan]    - Impact: ${llmInsight.impact}`);
         } else if (isFirstRun) {
-            console.log(`[Scan] 📌 First run - establishing baseline (skipping Gemini)`);
+            console.log(`[Scan] 📌 First run - establishing baseline (skipping OpenAI)`);
             addStep('insight', 'Initial baseline established', `Classification: ${deltaClassification}`);
-            llmInsight = { 
-                insight: "Initial baseline established.", 
+            llmInsight = {
+                insight: "Initial baseline established.",
                 classification: deltaClassification,
                 confidence: deltaConfidence,
                 impact: deltaImpact
             };
         } else {
-            console.log(`[Scan] ⏭️  No significant changes - skipping Gemini analysis`);
+            console.log(`[Scan] ⏭️  No significant changes - skipping OpenAI analysis`);
             addStep('insight', 'No material changes', `Classification: ${deltaClassification}`);
         }
         
@@ -438,7 +438,7 @@ async function runScan(req, res, next) {
             classification: llmInsight.classification,
             last_scan_time: new Date().toISOString()
         };
-        await supabaseService.saveReport(finalReport);
+        await db.saveReport(finalReport);
         console.log(`[Scan] ✅ Report saved successfully`);
 
         addStep('complete', 'Analysis complete');

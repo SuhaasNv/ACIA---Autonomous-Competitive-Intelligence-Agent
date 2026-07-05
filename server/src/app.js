@@ -25,8 +25,7 @@ const allowedOrigins = [
     'http://127.0.0.1:3000',
     'http://127.0.0.1:5173',
     process.env.FRONTEND_URL,
-    'https://acia-autonomous-competitive-intelli.vercel.app',
-    /\.vercel\.app$/, // Vercel preview deployments
+    /\.up\.railway\.app$/, // Railway preview/production domains
 ].filter(Boolean);
 app.use(cors({
     origin: (origin, cb) => {
@@ -58,6 +57,8 @@ app.get('/api/health', (req, res) => {
 });
 
 // Routes
+app.use('/api/auth', require('./routes/auth.routes'));
+app.use('/api/profile', require('./routes/profile.routes'));
 app.use('/api/scan', scanRoutes);
 app.use('/api/competitors', require('./routes/competitor.routes'));
 app.use('/api/reports', require('./routes/report.routes'));

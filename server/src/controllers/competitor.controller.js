@@ -1,4 +1,4 @@
-const supabaseService = require('../services/supabase.service');
+const db = require('../services/db.service');
 
 async function createCompetitorHandler(req, res, next) {
     try {
@@ -9,7 +9,7 @@ async function createCompetitorHandler(req, res, next) {
             return res.status(400).json({ error: 'Name and url are required' });
         }
 
-        const data = await supabaseService.createCompetitor(userId, name, url);
+        const data = await db.createCompetitor(userId, name, url);
 
         return res.status(201).json({
             status: 'success',
@@ -25,7 +25,7 @@ async function createCompetitorHandler(req, res, next) {
 async function getCompetitorHandler(req, res, next) {
     try {
         const userId = req.user.id;
-        const competitor = await supabaseService.getCompetitorForUser(userId);
+        const competitor = await db.getCompetitorForUser(userId);
         if (!competitor) {
             return res.status(404).json({ error: 'No competitor configured' });
         }
@@ -45,7 +45,7 @@ async function updateCompetitorHandler(req, res, next) {
             return res.status(400).json({ error: 'Name and url are required' });
         }
 
-        const data = await supabaseService.updateCompetitor(userId, id, name, url);
+        const data = await db.updateCompetitor(userId, id, name, url);
 
         return res.status(200).json({
             status: 'success',
