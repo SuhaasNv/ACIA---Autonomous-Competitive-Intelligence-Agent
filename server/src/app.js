@@ -8,6 +8,10 @@ const scanRoutes = require('./routes/scan.routes');
 
 const app = express();
 
+// Railway sits behind a reverse proxy - trust its single hop so
+// express-rate-limit can read X-Forwarded-For without throwing
+app.set('trust proxy', 1);
+
 // Security Hardening: Set HTTP headers
 app.use(helmet());
 
