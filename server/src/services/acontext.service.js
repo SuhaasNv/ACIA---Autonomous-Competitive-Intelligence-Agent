@@ -1,8 +1,8 @@
 const axios = require('axios');
 const { env } = require('../config/env');
 
-const ACONTEXT_KEY = env.ACONTEXT_API_KEY || 'sk-ac-pqlj3jgRV_KDktN2bspTc8bO1H-KXWP2uJGDGoaibgA';
-const BASE_URL = env.ACONTEXT_API_URL || 'https://api.acontext.dev/v1';
+const ACONTEXT_KEY = env.ACONTEXT_API_KEY;
+const BASE_URL = env.ACONTEXT_API_URL;
 const HEADERS = ACONTEXT_KEY ? { 'Authorization': `Bearer ${ACONTEXT_KEY}` } : {};
 
 function getKey(userId) {

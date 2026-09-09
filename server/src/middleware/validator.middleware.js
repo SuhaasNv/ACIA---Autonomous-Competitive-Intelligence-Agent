@@ -18,7 +18,7 @@ const validate = (validations) => {
 
 const validateCompetitor = validate([
     body('name').trim().notEmpty().withMessage('Name is required').escape(),
-    body('url').trim().isURL().withMessage('Valid URL is required').escape(),
+    body('url').trim().isURL().withMessage('Valid URL is required'),
 ]);
 
 const validateIdParam = validate([
@@ -33,7 +33,7 @@ const validateAuth = validate([
 const validateProfile = validate([
     body('fullName').trim().notEmpty().withMessage('Full name is required').escape(),
     body('companyName').trim().notEmpty().withMessage('Company name is required').escape(),
-    body('companyUrl').trim().isURL().withMessage('Valid company URL is required').escape(),
+    body('companyUrl').trim().isURL().withMessage('Valid company URL is required'),
 ]);
 
 module.exports = { validate, validateCompetitor, validateIdParam, validateAuth, validateProfile };
