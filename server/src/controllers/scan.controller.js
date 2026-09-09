@@ -6,6 +6,7 @@ const parser = require('../services/parser.service');
 const acontext = require('../services/acontext.service');
 const diffEngine = require('../services/diff.service');
 const openai = require('../services/openai.service');
+const email = require('../services/email.service');
 
 // Minimum tiers required before triggering additional strategies
 const MIN_TIERS_THRESHOLD = 2;
@@ -399,6 +400,10 @@ async function runScan(req, res, next) {
             console.log(`[Scan]    - Classification: ${llmInsight.classification}`);
             console.log(`[Scan]    - Confidence: ${llmInsight.confidence}%`);
             console.log(`[Scan]    - Impact: ${llmInsight.impact}`);
+
+            // Best-effort alert email - never blocks or fails the scan
+            email.sendChangeAlert(req.user.email, competitor.name, llmInsight.classification, llmInsight.insight)
+                .catch(err => console.error('[Scan] Email alert failed:', err.message));
         } else if (isFirstRun) {
             console.log(`[Scan] 📌 First run - establishing baseline (skipping OpenAI)`);
             addStep('insight', 'Initial baseline established', `Classification: ${deltaClassification}`);

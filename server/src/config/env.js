@@ -24,6 +24,12 @@ const env = {
     ACONTEXT_API_KEY: process.env.ACONTEXT_API_KEY,
     OPENAI_API_KEY: process.env.OPENAI_API_KEY,
     OPENAI_MODEL: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+    SMTP_HOST: process.env.SMTP_HOST,
+    SMTP_PORT: process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : undefined,
+    SMTP_USER: process.env.SMTP_USER,
+    SMTP_PASS: process.env.SMTP_PASS,
+    SMTP_FROM: process.env.SMTP_FROM,
+    FRONTEND_URL: process.env.FRONTEND_URL,
 };
 
 if (!env.DATABASE_URL) {
